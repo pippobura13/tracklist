@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MusicWave — Nuova Recensione</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="shared.css" />
+<style>
+.create-page { padding: 44px 0 90px; }
+
+.page-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--text-muted); font-size: .85rem; margin-bottom: 28px;
+  transition: color var(--trans);
+}
+.page-back:hover { color: var(--text); }
+
+.page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.1rem; font-weight: 900; margin-bottom: 6px; letter-spacing: -.03em;
+}
+.page-sub { color: var(--text-muted); font-size: .9rem; margin-bottom: 44px; }
+
+/* Steps indicator */
+.steps {
+  display: flex; align-items: center; gap: 0; margin-bottom: 44px;
+}
+.step {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .8rem; font-weight: 600; color: var(--text-dim);
+  transition: color var(--trans);
+}
+.step.done, .step.active { color: var(--text); }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+  font-size: .76rem; font-weight: 700; font-family: 'Space Mono', monospace;
+  transition: all var(--trans);
+}
+.step.active .step-num { border-color: var(--teal); color: var(--teal); background: rgba(0,196,180,.1); }
+.step.done .step-num { border-color: var(--teal); background: var(--teal); color: var(--navy-900); }
+.step-line {
+  flex: 1; height: 1px; background: var(--border); margin: 0 10px; max-width: 60px;
+}
+
+/* Layout: form + sidebar preview */
+.create-layout {
+  display: grid; grid-template-columns: 1fr 320px; gap: 36px; align-items: start;
+}
+
+/* Step blocks */
+.step-block {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 26px 28px;
+  margin-bottom: 20px; transition: border-color var(--trans);
+}
+.step-block.highlight { border-color: var(--border-gold); }
+
+.step-block-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+}
+.step-block-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--text-muted);
+}
+.step-block-badge {
+  padding: 2px 10px; border-radius: 10px;
+  font-size: .66rem; font-weight: 700; letter-spacing: .04em;
+}
+.badge-spotify { background: #1DB954; color: #fff; }
+.badge-opt { background: rgba(200,168,75,.12); color: var(--gold); border: 1px solid rgba(200,168,75,.2); }
+.badge-req { background: rgba(0,196,180,.1); color: var(--teal); border: 1px solid rgba(0,196,180,.2); }
+
+/* Spotify search */
+.spotify-row { display: flex; gap: 10px; margin-bottom: 14px; }
+.spotify-row .form-input { flex: 1; }
+
+.spotify-results { display: flex; flex-direction: column; gap: 7px; }
+
+.album-result {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  cursor: pointer; transition: all var(--trans);
+}
+.album-result:hover { border-color: var(--border-md); background: rgba(255,255,255,.03); }
+.album-result.selected { border-color: var(--teal); background: rgba(0,196,180,.06); }
+.album-result.selected .sel-badge { display: flex; }
+
+.ar-cover {
+  width: 50px; height: 50px; border-radius: 7px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--navy-600), var(--navy-500));
+  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+}
+.ar-info { flex: 1; min-width: 0; }
+.ar-title { font-size: .9rem; font-weight: 700; margin-bottom: 2px; }
+.ar-artist { font-size: .76rem; color: var(--text-muted); }
+.ar-tracks-count { font-size: .68rem; color: var(--text-dim); margin-top: 2px; }
+.sel-badge {
+  display: none; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--teal); color: var(--navy-900); font-size: .75rem; font-weight: 800;
+  flex-shrink: 0;
+}
+
+.no-results { color: var(--text-dim); font-size: .85rem; text-align: center; padding: 14px 0; }
+
+/* Tracks grid */
+.tracks-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 14px;
+}
+.track-item {
+  display: flex; align-items: center; gap: 9px; padding: 9px 11px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer; transition: all var(--trans);
+}
+.track-item:hover { border-color: var(--border-md); }
+.track-item.on { border-color: var(--border-gold); background: rgba(200,168,75,.06); }
+.track-num { font-family: 'Space Mono', monospace; font-size: .66rem; color: var(--text-dim); width: 20px; flex-shrink: 0; }
+.track-name { flex: 1; font-size: .82rem; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-check {
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 1.5px solid var(--text-dim); flex-shrink: 0;
+  transition: all var(--trans); display: flex; align-items: center; justify-content: center;
+  font-size: .55rem;
+}
+.track-item.on .track-check { background: var(--gold); border-color: var(--gold); color: var(--navy-900); }
+
+.tracks-limit-note { font-size: .72rem; color: var(--text-dim); margin-top: 8px; }
+
+/* Rating stars */
+.rating-row { display: flex; align-items: center; gap: 4px; }
+.r-star {
+  font-size: 2rem; cursor: pointer; transition: all var(--trans);
+  color: var(--text-dim); line-height: 1;
+}
+.r-star:hover { transform: scale(1.15); }
+.r-star.on { color: var(--gold); }
+.r-label {
+  font-family: 'Space Mono', monospace; font-size: .78rem; color: var(--text-muted);
+  margin-left: 10px; transition: color var(--trans);
+}
+
+/* Review textarea */
+.review-textarea {
+  min-height: 180px; line-height: 1.7;
+}
+.char-count {
+  text-align: right; font-size: .72rem; color: var(--text-dim); margin-top: 6px;
+}
+.char-count.warn { color: var(--red); }
+
+/* Sidebar preview */
+.preview-sidebar { position: sticky; top: 86px; }
+
+.preview-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.preview-card-head {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-muted); display: flex; align-items: center; gap: 7px;
+}
+.preview-card-head::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--teal); animation: pulse 2s infinite;
+}
+
+.preview-album-bar {
+  display: flex; gap: 12px; padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.preview-cover {
+  width: 56px; height: 56px; border-radius: 8px; flex-shrink: 0;
+  background: var(--navy-600); display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+}
+.preview-album-info { flex: 1; min-width: 0; }
+.preview-album-name {
+  font-family: 'Playfair Display', serif; font-size: .95rem; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.preview-artist { font-size: .76rem; color: var(--text-muted); margin-top: 2px; }
+
+.preview-body { padding: 14px 16px; }
+.preview-stars { display: flex; gap: 2px; margin-bottom: 10px; }
+.preview-text {
+  font-size: .8rem; line-height: 1.6; color: var(--text-muted);
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+.preview-placeholder {
+  font-size: .8rem; color: var(--text-dim); font-style: italic;
+}
+.preview-tracks { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px; }
+
+.preview-footer {
+  padding: 11px 16px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.preview-footer-text { font-size: .76rem; color: var(--text-muted); }
+.preview-footer-date { font-size: .7rem; color: var(--text-dim); margin-left: auto; }
+
+/* Action row */
+.action-row {
+  display: flex; gap: 12px; justify-content: flex-end; margin-top: 4px;
+}
+
+/* Tips */
+.tips-card {
+  margin-top: 16px;
+  background: rgba(0,196,180,.05); border: 1px solid rgba(0,196,180,.15);
+  border-radius: var(--radius); padding: 16px 18px;
+}
+.tips-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--teal); margin-bottom: 10px; }
+.tip-item { font-size: .78rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 6px; display: flex; gap: 7px; }
+.tip-item::before { content: '✦'; color: var(--teal); font-size: .6rem; margin-top: 3px; flex-shrink: 0; }
+
+@media (max-width: 900px) {
+  .create-layout { grid-template-columns: 1fr; }
+  .preview-sidebar { position: static; }
+  .tracks-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="home.html">
+    <div class="brand-mark">♪</div>
+    <span class="brand-name">Music<b>Wave</b></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="home.html">🏠 Home</a></li>
+    <li><a href="seguiti.html">👥 Seguiti</a></li>
+    <li><a href="messaggi.html">💬 Messaggi</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">M</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="container-sm create-page">
+
+    <a class="page-back" href="home.html">← Torna alla home</a>
+
+    <h1 class="page-title">Nuova Recensione</h1>
+    <p class="page-sub">Cerca l'album su Spotify, seleziona le tracce che ami e condividi la tua opinione.</p>
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step done" id="step-ind-1">
+        <div class="step-num">✓</div>
+        <span>Album</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step active" id="step-ind-2">
+        <div class="step-num">2</div>
+        <span>Tracce</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step-ind-3">
+        <div class="step-num">3</div>
+        <span>Valutazione</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step-ind-4">
+        <div class="step-num">4</div>
+        <span>Recensione</span>
+      </div>
+    </div>
+
+    <div class="create-layout">
+      <!-- MAIN FORM -->
+      <div>
+
+        <!-- STEP 1: Album -->
+        <div class="step-block highlight" id="block-album">
+          <div class="step-block-head">
+            <span class="step-block-title">
+              <span>🎵</span> Cerca album
+            </span>
+            <span class="step-block-badge badge-spotify">Spotify API</span>
+          </div>
+          <div class="spotify-row">
+            <input class="form-input" id="spotify-input" placeholder="Cerca per titolo, artista…"
+              oninput="spotifySearch(this.value)" />
+            <button class="btn btn-primary" style="flex-shrink:0" onclick="spotifySearch(document.getElementById('spotify-input').value)">Cerca</button>
+          </div>
+          <div class="spotify-results" id="spotify-results">
+            <p class="no-results" style="padding:4px 0;text-align:left;">Digita almeno 2 caratteri per cercare</p>
+          </div>
+        </div>
+
+        <!-- STEP 2: Tracks -->
+        <div class="step-block" id="block-tracks" style="display:none">
+          <div class="step-block-head">
+            <span class="step-block-title"><span>🎧</span> Tracce preferite</span>
+            <span class="step-block-badge badge-opt">Opzionale · max 5</span>
+          </div>
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:0">Seleziona le tracce che ti hanno colpito di più.</p>
+          <div class="tracks-grid" id="tracks-grid"></div>
+          <p class="tracks-limit-note" id="tracks-note">0 / 5 selezionate</p>
+        </div>
+
+        <!-- STEP 3: Rating -->
+        <div class="step-block" id="block-rating">
+          <div class="step-block-head">
+            <span class="step-block-title"><span>⭐</span> Valutazione</span>
+            <span class="step-block-badge badge-req">Richiesta</span>
+          </div>
+          <div class="rating-row" id="rating-row">
+            <span class="r-star" onclick="setRating(1)">★</span>
+            <span class="r-star" onclick="setRating(2)">★</span>
+            <span class="r-star" onclick="setRating(3)">★</span>
+            <span class="r-star" onclick="setRating(4)">★</span>
+            <span class="r-star" onclick="setRating(5)">★</span>
+            <span class="r-label" id="r-label">Clicca per valutare</span>
+          </div>
+        </div>
+
+        <!-- STEP 4: Review text -->
+        <div class="step-block" id="block-review">
+          <div class="step-block-head">
+            <span class="step-block-title"><span>✍️</span> La tua recensione</span>
+            <span class="step-block-badge badge-req">Richiesta · min 30 caratteri</span>
+          </div>
+          <textarea class="form-input review-textarea" id="review-text"
+            placeholder="Condividi la tua esperienza. Cosa ti ha colpito di questo album? La produzione, i testi, l'evoluzione artistica? Sii specifico e appassionato."
+            oninput="updateChar(this)"></textarea>
+          <p class="char-count" id="char-count">0 caratteri</p>
+        </div>
+
+        <div class="action-row">
+          <a href="home.html" class="btn btn-ghost">Annulla</a>
+          <button class="btn btn-ghost" onclick="saveDraft()">💾 Salva bozza</button>
+          <button class="btn btn-gold" onclick="publish()" style="padding:11px 28px;">Pubblica recensione →</button>
+        </div>
+
+      </div>
+
+      <!-- SIDEBAR: live preview + tips -->
+      <div class="preview-sidebar">
+        <div class="preview-card">
+          <div class="preview-card-head">Anteprima live</div>
+          <div class="preview-album-bar">
+            <div class="preview-cover" id="prev-cover">🎵</div>
+            <div class="preview-album-info">
+              <div class="preview-album-name" id="prev-album">Seleziona un album</div>
+              <div class="preview-artist" id="prev-artist">—</div>
+            </div>
+          </div>
+          <div class="preview-body">
+            <div class="preview-stars" id="prev-stars">
+              <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+            </div>
+            <div id="prev-text-area">
+              <p class="preview-placeholder">La tua recensione apparirà qui…</p>
+            </div>
+            <div class="preview-tracks" id="prev-tracks"></div>
+          </div>
+          <div class="preview-footer">
+            <div class="avatar" style="width:26px;height:26px;font-size:.7rem;">M</div>
+            <span class="preview-footer-text">Marco B.</span>
+            <span class="preview-footer-date">Adesso</span>
+          </div>
+        </div>
+
+        <div class="tips-card">
+          <p class="tips-title">Consigli per una buona recensione</p>
+          <p class="tip-item">Descrivi come ti ha fatto sentire l'album, non solo cosa c'è.</p>
+          <p class="tip-item">Cita momenti specifici: intro, bridge, testi particolari.</p>
+          <p class="tip-item">Confronta con altri lavori dell'artista se li conosci.</p>
+          <p class="tip-item">Esprimi sia punti di forza che debolezze.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const ALBUMS = [
+  { id:"a1", title:"OK Computer", artist:"Radiohead", emoji:"🤖", year:1997,
+    tracks:["Airbag","Paranoid Android","Subterranean Homesick Alien","Exit Music (For a Film)","Let Down","Karma Police","Fitter Happier","Electioneering","Climbing Up the Walls","No Surprises","Lucky","The Tourist"] },
+  { id:"a2", title:"The Dark Side of the Moon", artist:"Pink Floyd", emoji:"🌕", year:1973,
+    tracks:["Speak to Me","Breathe","On the Run","Time","The Great Gig in the Sky","Money","Us and Them","Any Colour You Like","Brain Damage","Eclipse"] },
+  { id:"a3", title:"Nevermind", artist:"Nirvana", emoji:"🐟", year:1991,
+    tracks:["Smells Like Teen Spirit","In Bloom","Come as You Are","Breed","Lithium","Polly","Territorial Pissings","Drain You","Lounge Act","Stay Away","On a Plain","Something in the Way"] },
+  { id:"a4", title:"Random Access Memories", artist:"Daft Punk", emoji:"🎛️", year:2013,
+    tracks:["Give Life Back to Music","The Game of Love","Giorgio by Moroder","Within","Instant Crush","Lose Yourself to Dance","Touch","Get Lucky","Beyond","Motherboard","Fragments of Time","Doin' it Right","Contact"] },
+  { id:"a5", title:"Blonde", artist:"Frank Ocean", emoji:"🌊", year:2016,
+    tracks:["Nikes","Ivy","Pink + White","Be Yourself","Solo","Skyline To","Self Control","Good Guy","Nights","Futura Free"] },
+  { id:"a6", title:"To Pimp a Butterfly", artist:"Kendrick Lamar", emoji:"🦋", year:2015,
+    tracks:["Wesley's Theory","For Free?","King Kunta","Institutionalized","These Walls","u","Alright","For Sale?","Momma","Hood Politics","How Much a Dollar Cost","Complexion","The Blacker the Berry","You Ain't Gotta Lie","i","Mortal Man"] },
+  { id:"a7", title:"Kind of Blue", artist:"Miles Davis", emoji:"🎺", year:1959,
+    tracks:["So What","Freddie Freeloader","Blue in Green","All Blues","Flamenco Sketches"] },
+  { id:"a8", title:"Blue", artist:"Joni Mitchell", emoji:"🎸", year:1971,
+    tracks:["All I Want","My Old Man","Little Green","Carey","Blue","California","This Flight Tonight","River","A Case of You","The Last Time I Saw Richard"] },
+];
+
+const RATINGS = ['','⭐ Pessimo','⭐⭐ Scarso','⭐⭐⭐ Nella media','⭐⭐⭐⭐ Buono','⭐⭐⭐⭐⭐ Capolavoro'];
+let selectedAlbum = null;
+let selectedTracks = new Set();
+let rating = 0;
+
+function spotifySearch(q) {
+  const res = document.getElementById('spotify-results');
+  if (!q || q.length < 2) {
+    res.innerHTML = '<p class="no-results" style="text-align:left">Digita almeno 2 caratteri per cercare</p>';
+    return;
+  }
+  const matches = ALBUMS.filter(a =>
+    a.title.toLowerCase().includes(q.toLowerCase()) ||
+    a.artist.toLowerCase().includes(q.toLowerCase())
+  );
+  if (!matches.length) {
+    res.innerHTML = '<p class="no-results">Nessun album trovato</p>'; return;
+  }
+  res.innerHTML = matches.map(a => `
+    <div class="album-result${selectedAlbum?.id===a.id?' selected':''}" onclick="selectAlbum('${a.id}')">
+      <div class="ar-cover">${a.emoji}</div>
+      <div class="ar-info">
+        <div class="ar-title">${a.title}</div>
+        <div class="ar-artist">${a.artist}</div>
+        <div class="ar-tracks-count">${a.year} · ${a.tracks.length} tracce</div>
+      </div>
+      <div class="sel-badge">✓</div>
+    </div>`).join('');
+}
+
+function selectAlbum(id) {
+  selectedAlbum = ALBUMS.find(a => a.id === id);
+  selectedTracks.clear();
+  spotifySearch(document.getElementById('spotify-input').value || selectedAlbum.title);
+
+  // Show tracks block
+  const tb = document.getElementById('block-tracks');
+  tb.style.display = 'block';
+
+  // Render tracks
+  document.getElementById('tracks-grid').innerHTML = selectedAlbum.tracks.map((t,i) => `
+    <div class="track-item" id="ti-${i}" onclick="toggleTrack(${i},'${t.replace(/'/g,"\\'")}')">
+      <span class="track-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="track-name">${t}</span>
+      <div class="track-check"></div>
+    </div>`).join('');
+
+  // Update steps
+  updateSteps(2);
+  updatePreview();
+}
+
+function toggleTrack(i, name) {
+  if (selectedTracks.has(name)) {
+    selectedTracks.delete(name);
+    document.getElementById('ti-'+i).classList.remove('on');
+    document.getElementById('ti-'+i).querySelector('.track-check').textContent = '';
+  } else {
+    if (selectedTracks.size >= 5) { showToast('Massimo 5 tracce selezionabili'); return; }
+    selectedTracks.add(name);
+    document.getElementById('ti-'+i).classList.add('on');
+    document.getElementById('ti-'+i).querySelector('.track-check').textContent = '✓';
+  }
+  document.getElementById('tracks-note').textContent = `${selectedTracks.size} / 5 selezionate`;
+  updatePreview();
+}
+
+function setRating(n) {
+  rating = n;
+  document.querySelectorAll('.r-star').forEach((s,i) => s.classList.toggle('on', i < n));
+  document.getElementById('r-label').textContent = RATINGS[n];
+  updateSteps(3);
+  updatePreview();
+}
+
+function updateChar(el) {
+  const len = el.value.length;
+  const cc = document.getElementById('char-count');
+  cc.textContent = `${len} caratteri`;
+  cc.classList.toggle('warn', len > 1400);
+  if (len >= 30) updateSteps(4);
+  updatePreview();
+}
+
+function updateSteps(reached) {
+  [1,2,3,4].forEach(n => {
+    const el = document.getElementById('step-ind-'+n);
+    if (n < reached) {
+      el.classList.add('done'); el.classList.remove('active');
+      el.querySelector('.step-num').textContent = '✓';
+    } else if (n === reached) {
+      el.classList.remove('done'); el.classList.add('active');
+      el.querySelector('.step-num').textContent = n;
+    } else {
+      el.classList.remove('done','active');
+      el.querySelector('.step-num').textContent = n;
+    }
+  });
+}
+
+function updatePreview() {
+  if (selectedAlbum) {
+    document.getElementById('prev-cover').textContent = selectedAlbum.emoji;
+    document.getElementById('prev-album').textContent = selectedAlbum.title;
+    document.getElementById('prev-artist').textContent = selectedAlbum.artist;
+  }
+  // Stars
+  const ss = document.getElementById('prev-stars');
+  ss.innerHTML = Array.from({length:5},(_,i)=>`<span class="star${i<rating?' on':''}">★</span>`).join('');
+  // Text
+  const txt = document.getElementById('review-text').value.trim();
+  const ta = document.getElementById('prev-text-area');
+  if (txt) {
+    ta.innerHTML = `<p class="preview-text">${txt}</p>`;
+  } else {
+    ta.innerHTML = '<p class="preview-placeholder">La tua recensione apparirà qui…</p>';
+  }
+  // Tracks
+  document.getElementById('prev-tracks').innerHTML =
+    Array.from(selectedTracks).slice(0,3).map(t=>`<span class="track-pill">♪ ${t}</span>`).join('');
+}
+
+function saveDraft() { showToast('Bozza salvata! 💾'); }
+
+function publish() {
+  if (!selectedAlbum) { showToast('❌ Seleziona prima un album'); return; }
+  if (!rating) { showToast('❌ Dai una valutazione all\'album'); return; }
+  const txt = document.getElementById('review-text').value.trim();
+  if (txt.length < 30) { showToast('❌ Scrivi almeno 30 caratteri di recensione'); return; }
+
+  showToast('Pubblicazione in corso…');
+  setTimeout(() => {
+    showToast('✅ Recensione pubblicata con successo!');
+    setTimeout(() => { window.location.href = 'home.html'; }, 1200);
+  }, 1000);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// Init: pre-highlight first block
+updateSteps(1);
+</script>
+</body>
+</html>
