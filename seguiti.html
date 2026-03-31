@@ -3,29 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MusicWave — Seguiti</title>
+<title>Hive Music — Seguiti</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="shared.css" />
 <style>
-.page-header {
-  padding: 44px 0 0;
-  margin-bottom: 32px;
-}
+.page-header { padding: 44px 0 0; margin-bottom: 32px; }
 .page-header-inner {
   display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px;
 }
 .page-sub { color: var(--text-muted); font-size: .88rem; margin-top: 6px; }
 
-/* Who to follow sidebar layout */
 .following-layout {
-  display: grid; grid-template-columns: 1fr 300px; gap: 36px;
-  align-items: start;
+  display: grid; grid-template-columns: 1fr 300px; gap: 36px; align-items: start;
 }
-
-.reviews-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
-}
+.reviews-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
 /* Empty state */
 .empty-state {
@@ -35,12 +27,12 @@
 }
 .empty-icon { font-size: 3.8rem; margin-bottom: 18px; }
 .empty-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Fraunces', serif;
   font-size: 1.4rem; font-weight: 700; margin-bottom: 10px;
 }
 .empty-text { color: var(--text-muted); line-height: 1.65; max-width: 320px; margin: 0 auto 24px; font-size: .9rem; }
 
-/* Who to follow */
+/* Sidebar */
 .sidebar-card {
   background: var(--card-bg); border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden; position: sticky; top: 86px;
@@ -49,30 +41,30 @@
   padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
 }
-.sidebar-card-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; }
-.see-all { font-size: .76rem; color: var(--teal); }
+.sidebar-card-title { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 700; }
+.see-all { font-size: .76rem; color: var(--honey); }
 
 .user-item {
   display: flex; align-items: center; gap: 12px; padding: 13px 20px;
   border-bottom: 1px solid var(--border); transition: background var(--trans);
 }
 .user-item:last-child { border-bottom: none; }
-.user-item:hover { background: rgba(255,255,255,.03); }
+.user-item:hover { background: rgba(245,166,35,.03); }
 .user-info { flex: 1; min-width: 0; }
 .user-info .name { font-size: .85rem; font-weight: 600; margin-bottom: 1px; }
 .user-info .meta { font-size: .73rem; color: var(--text-muted); }
 .follow-btn {
-  padding: 5px 13px; border-radius: 14px;
+  padding: 6px 14px; border-radius: 16px;
   font-size: .73rem; font-weight: 700;
-  border: 1px solid var(--border-gold); color: var(--gold);
+  border: 1px solid var(--border-honey); color: var(--honey);
   transition: all var(--trans); flex-shrink: 0;
 }
-.follow-btn:hover { background: rgba(200,168,75,.1); }
+.follow-btn:hover { background: rgba(245,166,35,.08); }
 .follow-btn.following {
-  background: rgba(0,196,180,.1); border-color: var(--teal); color: var(--teal);
+  background: rgba(92,224,192,.08); border-color: var(--mint); color: var(--mint);
 }
 
-/* Followed user filter strip */
+/* User filter strip */
 .user-filter-strip {
   display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
   margin-bottom: 24px; scrollbar-width: none;
@@ -80,26 +72,15 @@
 .user-filter-strip::-webkit-scrollbar { display: none; }
 .user-chip {
   display: flex; align-items: center; gap: 7px; flex-shrink: 0;
-  padding: 6px 12px 6px 6px; border-radius: 24px;
+  padding: 7px 14px 7px 7px; border-radius: 24px;
   border: 1px solid var(--border); font-size: .78rem; font-weight: 500;
   color: var(--text-muted); transition: all var(--trans);
 }
-.user-chip:hover, .user-chip.on { border-color: var(--teal); color: var(--teal); background: rgba(0,196,180,.07); }
+.user-chip:hover, .user-chip.on { border-color: var(--honey); color: var(--honey); background: rgba(245,166,35,.06); }
 .user-chip .av {
-  width: 22px; height: 22px; border-radius: 50%; font-size: .62rem;
-  background: var(--navy-500); display: flex; align-items: center; justify-content: center;
-  color: var(--gold); font-weight: 700;
-}
-
-/* Section divider */
-.date-divider {
-  grid-column: 1 / -1;
-  display: flex; align-items: center; gap: 14px;
-  font-size: .72rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--text-dim);
-}
-.date-divider::before, .date-divider::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
+  width: 24px; height: 24px; border-radius: 50%; font-size: .62rem;
+  background: var(--hive-500); display: flex; align-items: center; justify-content: center;
+  color: var(--honey); font-weight: 700;
 }
 
 @media (max-width: 900px) {
@@ -113,8 +94,8 @@
 
 <nav class="navbar">
   <a class="navbar-brand" href="home.html">
-    <div class="brand-mark">♪</div>
-    <span class="brand-name">Music<b>Wave</b></span>
+    <div class="brand-mark">🐝</div>
+    <span class="brand-name">Hive <b>Music</b></span>
   </a>
   <ul class="nav-links">
     <li><a href="home.html">🏠 Home</a></li>
@@ -139,13 +120,10 @@
   </div>
 
   <div class="following-layout" id="following-layout">
-    <!-- Main feed -->
     <div>
       <div class="user-filter-strip" id="user-strip"></div>
       <div id="feed-area"></div>
     </div>
-
-    <!-- Sidebar: suggestions -->
     <div>
       <div class="sidebar-card">
         <div class="sidebar-card-head">
@@ -160,130 +138,148 @@
 
 <div id="toast"></div>
 
+<script src="api.js"></script>
 <script>
-const FOLLOWING = [
-  { id:1, name:"Laura Russo", av:"L", reviews: 14, mutual: 3 },
-  { id:2, name:"Giovanni C.", av:"G", reviews: 22, mutual: 7 },
-  { id:3, name:"Sara M.", av:"S", reviews: 9, mutual: 2 },
-];
+let followingList = [];
+let activeUserId = 'all';
+let currentUser = null;
 
-const SUGGESTIONS = [
-  { id:4, name:"Elena De Luca", av:"E", genre:"Jazz & Soul", followers:284 },
-  { id:5, name:"Marco F.", av:"M", genre:"Rock progressivo", followers:147 },
-  { id:6, name:"Chiara B.", av:"C", genre:"Indie & Folk", followers:390 },
-  { id:7, name:"Luca Mancini", av:"L", genre:"Hip-Hop", followers:512 },
-];
-
-const FEED_REVIEWS = [
-  { id:10, album:"The College Dropout", artist:"Kanye West", emoji:"🎓", genre:"Hip-Hop", rating:5,
-    text:"Un esordio straordinario che ridefinì le aspettative per il rap mainstream. L'autobiografia di West è resa con umorismo e profondità rara.",
-    tracks:["Through the Wire","All Falls Down","Jesus Walks"], user:"Laura R.", av:"L", date:"1 ora fa", likes:18 },
-  { id:11, album:"Sketches of Spain", artist:"Miles Davis", emoji:"🎺", genre:"Jazz", rating:5,
-    text:"La collaborazione con Gil Evans è semplicemente sublime. Musica che trascende i generi e si colloca in uno spazio tutto suo, tra classica e jazz.",
-    tracks:["Concierto de Aranjuez","Will o' the Wisp"], user:"Gio C.", av:"G", date:"3 ore fa", likes:24 },
-  { id:12, album:"CTRL", artist:"SZA", emoji:"☕", genre:"R&B", rating:4,
-    text:"Un album di debutto insolitamente maturo. SZA naviga temi di vulnerabilità e identità con una grazia disarmante. 'The Weekend' è un momento di genius pop.",
-    tracks:["The Weekend","Drew Barrymore","Garden"], user:"Sara M.", av:"S", date:"Ieri", likes:31 },
-  { id:13, album:"A Moon Shaped Pool", artist:"Radiohead", emoji:"🌙", genre:"Rock", rating:4,
-    text:"Uno dei lavori più malinconici dei Radiohead. Le orchestrazioni di Jonny Greenwood raggiungono vette inedite. 'Daydreaming' è devastante nella sua semplicità.",
-    tracks:["Burn the Witch","Daydreaming","True Love Waits"], user:"Laura R.", av:"L", date:"2 giorni fa", likes:15 },
-];
-
-let activeUser = 'all';
-const following = new Set(FOLLOWING.map(f => f.id));
-
-(function init() {
-  // User filter strip
-  const strip = document.getElementById('user-strip');
-  strip.innerHTML = `<button class="user-chip on" onclick="filterUser(this,'all')"><span style="font-size:.85rem">👥</span> Tutti</button>` +
-    FOLLOWING.map(f => `
-      <button class="user-chip" onclick="filterUser(this,${f.id})">
-        <span class="av">${f.av}</span>${f.name.split(' ')[0]}
-      </button>`).join('');
-
-  // Suggestions
-  const sl = document.getElementById('suggestions-list');
-  sl.innerHTML = SUGGESTIONS.map(s => `
-    <div class="user-item">
-      <div class="avatar" style="width:38px;height:38px;font-size:.9rem;">${s.av}</div>
-      <div class="user-info">
-        <div class="name">${s.name}</div>
-        <div class="meta">${s.genre} · ${s.followers} seguaci</div>
-      </div>
-      <button class="follow-btn" id="sfb-${s.id}" onclick="toggleFollow(${s.id})">Segui</button>
-    </div>`).join('');
-
-  renderFeed();
+(async function init() {
+  if (!Auth.isLoggedIn()) { window.location.href = 'accedi.html'; return; }
+  try { currentUser = await Auth.me(); } catch { Auth.logout(); return; }
+  const [followingRes, suggestionsRes] = await Promise.allSettled([Users.following(), Users.suggestions()]);
+  followingList = followingRes.status === 'fulfilled' ? (followingRes.value.users || []) : [];
+  const suggestions = suggestionsRes.status === 'fulfilled' ? (suggestionsRes.value.users || []) : [];
+  renderUserStrip();
+  renderSuggestions(suggestions);
+  await renderFeed();
 })();
 
-function filterUser(el, uid) {
-  document.querySelectorAll('.user-chip').forEach(c => c.classList.remove('on'));
-  el.classList.add('on'); activeUser = uid; renderFeed();
+function renderUserStrip() {
+  const strip = document.getElementById('user-strip');
+  strip.innerHTML =
+    `<button class="user-chip on" onclick="filterUser(this,'all')"><span style="font-size:.85rem">👥</span> Tutti</button>` +
+    followingList.map(u => {
+      const av = (u.display_name || u.username || '?')[0].toUpperCase();
+      return `<button class="user-chip" onclick="filterUser(this,${u.id})">
+        <span class="av">${av}</span>${(u.display_name || u.username).split(' ')[0]}
+      </button>`;
+    }).join('');
 }
 
-function renderFeed() {
-  const area = document.getElementById('feed-area');
-  let data = FEED_REVIEWS;
-  if (activeUser !== 'all') {
-    const user = FOLLOWING.find(f => f.id === activeUser);
-    data = data.filter(r => user && r.av === user.av);
-  }
-
-  if (!data.length) {
-    area.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">🎵</div>
-      <h2 class="empty-title">Nessuna recensione</h2>
-      <p class="empty-text">Questo utente non ha ancora pubblicato recensioni recenti.</p>
+function renderSuggestions(suggestions) {
+  const sl = document.getElementById('suggestions-list');
+  if (!suggestions.length) { sl.innerHTML = '<p style="padding:18px 20px;color:var(--text-dim);font-size:.82rem">Nessun suggerimento disponibile</p>'; return; }
+  sl.innerHTML = suggestions.map(s => {
+    const av = (s.display_name || s.username || '?')[0].toUpperCase();
+    return `<div class="user-item">
+      <div class="avatar" style="width:38px;height:38px;font-size:.9rem;">${av}</div>
+      <div class="user-info">
+        <div class="name">${s.display_name || s.username}</div>
+        <div class="meta">${s.genre || ''} · ${s.followers_count ?? 0} seguaci</div>
+      </div>
+      <button class="follow-btn" id="sfb-${s.id}" onclick="toggleFollow(${s.id})">Segui</button>
     </div>`;
-    return;
-  }
+  }).join('');
+}
 
-  let html = '<div class="reviews-grid">';
-  data.forEach((r, i) => {
-    html += `
-      <article class="review-card" onclick="goDetail(${r.id})" style="animation:fadeUp .35s ease both;animation-delay:${i*.05}s">
+async function renderFeed() {
+  const area = document.getElementById('feed-area');
+  area.innerHTML = '<p style="color:var(--text-dim);font-size:.85rem;padding:20px 0">Caricamento…</p>';
+  try {
+    const params = activeUserId === 'all' ? {} : { userId: activeUserId };
+    const { reviews } = await Feed.get(params);
+    if (!reviews || !reviews.length) {
+      area.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">🐝</div>
+        <h2 class="empty-title">Nessuna recensione</h2>
+        <p class="empty-text">${activeUserId === 'all' ? 'Le persone che segui non hanno ancora pubblicato recensioni.' : 'Questo utente non ha ancora pubblicato recensioni recenti.'}</p>
+      </div>`;
+      return;
+    }
+    let html = '<div class="reviews-grid">';
+    reviews.forEach((r, i) => {
+      const av = (r.display_name || r.username || '?')[0].toUpperCase();
+      const name = r.display_name || r.username;
+      const tracks = Array.isArray(r.fav_tracks_json) ? r.fav_tracks_json : [];
+      html += `<article class="review-card" onclick="goDetail(${r.review_id})" style="animation:fadeUp .35s ease both;animation-delay:${i*.05}s">
         <div class="rc-album-header">
-          <div class="rc-cover">${r.emoji}</div>
+          <div class="rc-cover">${r.cover_url ? `<img src="${r.cover_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : '🎵'}</div>
           <div class="rc-album-info">
-            <div class="rc-title">${r.album}</div>
+            <div class="rc-title">${r.album_title}</div>
             <div class="rc-artist">${r.artist}</div>
-            <span class="rc-genre">${r.genre}</span>
+            <span class="rc-genre">${r.genre || ''}</span>
             <div class="rc-stars">${stars(r.rating)}</div>
           </div>
         </div>
         <div class="rc-body">
-          <p class="rc-text">${r.text}</p>
-          <div class="rc-tracks">${r.tracks.map(t=>`<span class="track-pill">♪ ${t}</span>`).join('')}</div>
+          <p class="rc-text">${r.body}</p>
+          <div class="rc-tracks">${tracks.slice(0,3).map(t=>`<span class="track-pill">♪ ${t}</span>`).join('')}</div>
         </div>
         <div class="rc-footer">
           <div class="rc-user">
-            <div class="avatar" style="width:27px;height:27px;font-size:.73rem;">${r.av}</div>
-            <div>
-              <div class="rc-user-name">${r.user}</div>
-              <div class="rc-date">${r.date}</div>
-            </div>
+            <div class="avatar" style="width:28px;height:28px;font-size:.73rem;">${av}</div>
+            <div><div class="rc-user-name">${name}</div><div class="rc-date">${formatDate(r.created_at)}</div></div>
           </div>
           <div class="rc-actions">
-            <button class="action-btn" onclick="event.stopPropagation()">👍 ${r.likes}</button>
-            <button class="action-btn" onclick="event.stopPropagation();goDetail(${r.id})">💬</button>
+            <button class="action-btn" onclick="event.stopPropagation();like(${r.review_id},this)">👍 <span class="lk-${r.review_id}">${r.likes_count}</span></button>
+            <button class="action-btn" onclick="event.stopPropagation();goDetail(${r.review_id})">💬 ${r.comments_count}</button>
           </div>
         </div>
       </article>`;
-  });
-  html += '</div>';
-  area.innerHTML = html;
+    });
+    html += '</div>';
+    area.innerHTML = html;
+  } catch (err) { area.innerHTML = `<p style="color:var(--coral);padding:20px 0">Errore: ${err.message}</p>`; }
 }
 
-function stars(n) {
-  return Array.from({length:5},(_,i)=>`<span class="star${i<n?' on':''}">★</span>`).join('');
+function filterUser(el, uid) {
+  document.querySelectorAll('.user-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  activeUserId = uid;
+  renderFeed();
 }
-function toggleFollow(id) {
-  const btn = document.getElementById('sfb-'+id);
-  const is = btn.classList.toggle('following');
-  btn.textContent = is ? '✓ Seguito' : 'Segui';
-  showToast(is ? 'Ora segui questo utente!' : 'Non segui più questo utente');
+
+async function toggleFollow(id) {
+  const btn = document.getElementById('sfb-' + id);
+  const isNow = btn.classList.toggle('following');
+  btn.textContent = isNow ? '…' : 'Segui';
+  try {
+    const { following } = await Users.toggleFollow(id, isNow);
+    btn.textContent = following ? '✓ Seguito' : 'Segui';
+    btn.classList.toggle('following', following);
+    showToast(following ? 'Ora segui questo utente!' : 'Non segui più questo utente');
+    const followingRes = await Users.following();
+    followingList = followingRes.users || [];
+    renderUserStrip();
+  } catch (err) {
+    btn.classList.toggle('following');
+    btn.textContent = btn.classList.contains('following') ? '✓ Seguito' : 'Segui';
+    showToast('Errore: ' + err.message);
+  }
 }
-function goDetail(id) { sessionStorage.setItem('mw_review', id); window.location.href = 'dettaglio.html'; }
+
+async function like(reviewId, btn) {
+  if (!currentUser) { showToast('Accedi per mettere mi piace'); return; }
+  const isActive = btn.classList.toggle('liked');
+  try {
+    const { likes_count } = await Reviews.like(reviewId, isActive ? 1 : 0);
+    const span = document.querySelector(`.lk-${reviewId}`);
+    if (span) span.textContent = likes_count;
+  } catch (err) { btn.classList.toggle('liked'); showToast('Errore: ' + err.message); }
+}
+
+function stars(n) { return Array.from({length:5}, (_,i) => `<span class="star${i<n?' on':''}">★</span>`).join(''); }
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), now = new Date(), diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'Adesso';
+  if (diff < 3600) return `${Math.floor(diff/60)} min fa`;
+  if (diff < 86400) return `${Math.floor(diff/3600)} ore fa`;
+  if (diff < 172800) return 'Ieri';
+  return d.toLocaleDateString('it-IT', { day:'numeric', month:'short' });
+}
+function goDetail(id) { sessionStorage.setItem('hm_review', id); window.location.href = 'dettaglio.html'; }
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
