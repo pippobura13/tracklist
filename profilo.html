@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hive Music — Profilo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="shared.css" />
+<style>
+.profile-page { padding: 44px 0 90px; }
+
+/* Hero */
+.profile-hero {
+  display: flex; align-items: flex-end; gap: 28px;
+  padding: 36px 36px 28px;
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 32px;
+  position: relative;
+}
+.profile-avatar-wrap { position: relative; flex-shrink: 0; }
+.profile-avatar {
+  width: 100px; height: 100px; border-radius: 50%;
+  background: linear-gradient(145deg, var(--hive-500), var(--hive-600));
+  border: 3px solid var(--border-honey);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.4rem; font-weight: 700; color: var(--honey-lt);
+  overflow: hidden;
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-info { flex: 1; min-width: 0; }
+.profile-display-name {
+  font-family: 'Fraunces', serif; font-size: 1.9rem; font-weight: 900;
+  letter-spacing: -.03em; margin-bottom: 2px;
+}
+.profile-username { font-size: .88rem; color: var(--text-muted); margin-bottom: 10px; }
+.profile-bio { font-size: .9rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; max-width: 520px; }
+.profile-stats { display: flex; gap: 28px; }
+.profile-stat { text-align: center; }
+.profile-stat-num {
+  font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 900; color: var(--honey);
+}
+.profile-stat-label { font-size: .72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+.profile-joined { font-size: .72rem; color: var(--text-dim); margin-top: 8px; }
+
+.profile-actions { display: flex; gap: 10px; align-items: flex-start; flex-shrink: 0; }
+
+/* Reviews grid */
+.profile-section-title {
+  font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 700;
+  margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+}
+.reviews-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;
+}
+
+/* Empty state */
+.empty-state {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 60px 24px; text-align: center;
+  grid-column: 1 / -1;
+}
+.empty-state-icon { font-size: 2.5rem; margin-bottom: 16px; }
+.empty-state-title { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+.empty-state-text { font-size: .85rem; color: var(--text-muted); margin-bottom: 20px; }
+
+/* Follow btn */
+.follow-btn {
+  padding: 10px 22px; border-radius: 20px;
+  font-size: .85rem; font-weight: 700;
+  border: 1px solid var(--border-honey); color: var(--honey);
+  transition: all var(--trans);
+}
+.follow-btn:hover { background: rgba(245,166,35,.08); }
+.follow-btn.following {
+  background: rgba(92,224,192,.08); border-color: var(--mint); color: var(--mint);
+}
+
+/* Edit modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(6px);
+  z-index: 2000; display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden; transition: all var(--trans-slow);
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal {
+  background: var(--hive-800); border: 1px solid var(--border-honey);
+  border-radius: var(--radius); padding: 32px; width: 100%; max-width: 480px;
+  box-shadow: var(--shadow-md);
+  transform: translateY(20px); transition: transform var(--trans-slow);
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-title {
+  font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 700;
+  margin-bottom: 24px;
+}
+.form-group { margin-bottom: 18px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+.modal-divider {
+  border: none; border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+
+@media (max-width: 700px) {
+  .profile-hero { flex-direction: column; align-items: center; text-align: center; }
+  .profile-bio { max-width: 100%; }
+  .profile-stats { justify-content: center; }
+  .profile-actions { width: 100%; justify-content: center; }
+  .reviews-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="home.html">
+    <div class="brand-mark">🐝</div>
+    <span class="brand-name">Hive <b>Music</b></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="home.html">🏠 Home</a></li>
+    <li><a href="seguiti.html">👥 Seguiti</a></li>
+    <li><a href="messaggi.html">💬 Messaggi</a></li>
+  </ul>
+  <div class="nav-right" id="nav-right"></div>
+</nav>
+
+<div class="page-wrap">
+  <div class="container profile-page">
+
+    <!-- Profile Hero -->
+    <div class="profile-hero" id="profile-hero">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar" id="profile-avatar">?</div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-display-name" id="profile-name">Caricamento…</div>
+        <div class="profile-username" id="profile-username"></div>
+        <div class="profile-bio" id="profile-bio"></div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <div class="profile-stat-num" id="stat-reviews">—</div>
+            <div class="profile-stat-label">Recensioni</div>
+          </div>
+          <button class="profile-stat" onclick="openFollowModal('followers')"
+            style="background:none;border:none;cursor:pointer;text-align:center;padding:0;transition:opacity var(--trans);"
+            onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+            <div class="profile-stat-num" id="stat-followers">—</div>
+            <div class="profile-stat-label">Seguaci</div>
+          </button>
+          <button class="profile-stat" onclick="openFollowModal('following')"
+            style="background:none;border:none;cursor:pointer;text-align:center;padding:0;transition:opacity var(--trans);"
+            onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+            <div class="profile-stat-num" id="stat-following">—</div>
+            <div class="profile-stat-label">Seguiti</div>
+          </button>
+        </div>
+        <div class="profile-joined" id="profile-joined"></div>
+      </div>
+      <div class="profile-actions" id="profile-actions"></div>
+    </div>
+
+    <!-- Reviews -->
+    <div class="profile-section-title">🎵 Recensioni</div>
+    <div class="reviews-grid" id="reviews-grid">
+      <div class="empty-state">
+        <div class="empty-state-icon">⏳</div>
+        <div class="empty-state-title">Caricamento…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal-overlay" id="edit-modal" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-title">✏️ Modifica profilo</div>
+    <div class="form-group">
+      <label class="form-label">Nome visualizzato</label>
+      <input class="form-input" id="edit-display-name" type="text" maxlength="100" placeholder="Il tuo nome" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bio</label>
+      <textarea class="form-input form-textarea" id="edit-bio" rows="3" maxlength="300"
+        placeholder="Parlaci di te, dei tuoi generi preferiti…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Foto profilo</label>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+        <div id="avatar-preview" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(145deg,var(--hive-500),var(--hive-600));border:2px solid var(--border-honey);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;color:var(--honey-lt);overflow:hidden;flex-shrink:0;">?</div>
+        <div>
+          <label class="btn btn-ghost" style="font-size:.78rem;padding:8px 16px;cursor:pointer;display:inline-block;margin-bottom:6px;">
+            📷 Carica foto
+            <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="onAvatarFileChange(this)">
+          </label>
+          <div style="font-size:.72rem;color:var(--text-dim);">JPG, PNG, GIF, WebP · Max 5MB</div>
+          <div id="avatar-upload-status" style="font-size:.75rem;margin-top:4px;"></div>
+        </div>
+      </div>
+      <input class="form-input" id="edit-avatar-url" type="url" placeholder="Oppure incolla un URL immagine…" />
+    </div>
+
+    <hr class="modal-divider" />
+    <div class="profile-section-title" style="font-size:.9rem;margin-bottom:14px;">🔒 Cambia password <span style="font-size:.75rem;color:var(--text-dim);font-weight:400">(opzionale)</span></div>
+    <div class="form-group">
+      <label class="form-label">Password attuale</label>
+      <input class="form-input" id="edit-current-password" type="password" autocomplete="current-password" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nuova password</label>
+      <input class="form-input" id="edit-new-password" type="password" autocomplete="new-password" placeholder="Min. 8 caratteri" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditModal()">Annulla</button>
+      <button class="btn btn-primary" id="save-profile-btn" onclick="saveProfile()">Salva modifiche</button>
+    </div>
+  </div>
+</div>
+
+<!-- Followers / Following Modal -->
+<div class="modal-overlay" id="follow-modal" onclick="closeFollowModal(event)">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title" id="follow-modal-title">Seguaci</div>
+    <div id="follow-modal-list" style="max-height:420px;overflow-y:auto;margin-top:4px;"></div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeFollowModal()">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="api.js?v=5"></script>
+<script>
+let currentUser  = null;
+let profileUser  = null;
+let isOwnProfile = false;
+let isFollowing  = false;
+
+(async function init() {
+  // Determine which profile to show
+  const params = new URLSearchParams(window.location.search);
+  const targetId = params.get('id') ? parseInt(params.get('id')) : null;
+
+  // Load current session
+  if (Auth.isLoggedIn()) {
+    try { currentUser = await Auth.me(); Auth.saveSession(localStorage.getItem('hm_token'), currentUser); }
+    catch { currentUser = null; }
+  }
+
+  // Navbar
+  const nr = document.getElementById('nav-right');
+  if (currentUser) {
+    const av = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
+    nr.innerHTML = `
+      <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
+      <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">${av}</a>`;
+  } else {
+    nr.innerHTML = `
+      <a href="accedi.html" class="btn btn-ghost">Accedi</a>
+      <a href="accedi.html" class="btn btn-primary">Registrati</a>`;
+  }
+
+  // Which user to display?
+  const userId = targetId || (currentUser ? currentUser.id : null);
+
+  if (!userId) {
+    // Not logged in, no target — redirect to login
+    window.location.href = 'accedi.html';
+    return;
+  }
+
+  isOwnProfile = currentUser && (currentUser.id === userId);
+
+  try {
+    profileUser = await Users.get(userId);
+    renderProfile(profileUser);
+    await loadReviews(userId);
+  } catch (err) {
+    showToast('Errore: ' + err.message);
+  }
+})();
+
+function renderProfile(u) {
+  document.title = `${u.display_name || u.username} — Hive Music`;
+
+  // Avatar
+  const avatarEl = document.getElementById('profile-avatar');
+  if (u.avatar_url) {
+    avatarEl.innerHTML = `<img src="${escapeHtml(u.avatar_url)}" alt="" onerror="this.parentElement.textContent='${(u.display_name||u.username||'?')[0].toUpperCase()}'" />`;
+  } else {
+    avatarEl.textContent = (u.display_name || u.username || '?')[0].toUpperCase();
+  }
+
+  document.getElementById('profile-name').textContent    = u.display_name || u.username;
+  document.getElementById('profile-username').textContent = '@' + u.username;
+  document.getElementById('profile-bio').textContent      = u.bio || '';
+  document.getElementById('stat-reviews').textContent     = u.reviews_count   ?? 0;
+  document.getElementById('stat-followers').textContent   = u.followers_count ?? 0;
+  document.getElementById('stat-following').textContent   = u.following_count ?? 0;
+
+  if (u.created_at) {
+    const d = new Date(u.created_at);
+    document.getElementById('profile-joined').textContent =
+      'Membro dal ' + d.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+  }
+
+  // Actions
+  const actionsEl = document.getElementById('profile-actions');
+  if (isOwnProfile) {
+    actionsEl.innerHTML = `
+      <button class="btn btn-ghost" onclick="openEditModal()">✏️ Modifica profilo</button>
+      <button class="btn btn-ghost" onclick="logout()" style="color:var(--coral);border-color:rgba(255,107,107,.3)">Esci</button>`;
+  } else if (currentUser) {
+    isFollowing = u.is_following || false;
+    actionsEl.innerHTML = `
+      <button class="follow-btn${isFollowing ? ' following' : ''}" id="follow-btn" onclick="toggleFollow()">
+        ${isFollowing ? '✓ Seguito' : 'Segui'}
+      </button>
+      <button class="btn btn-ghost" onclick="openChatWith(${u.id})">💬 Messaggio</button>`;
+  }
+}
+
+function openChatWith(userId) {
+  // Force a full navigation (not a back-forward cache hit) by adding a timestamp
+  window.location.href = 'messaggi.html?user=' + userId + '&t=' + Date.now();
+}
+
+async function loadReviews(userId) {
+  const grid = document.getElementById('reviews-grid');
+  try {
+    const { reviews } = await Feed.get({ userId });
+    if (!reviews.length) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🎵</div>
+          <div class="empty-state-title">Nessuna recensione ancora</div>
+          <div class="empty-state-text">${isOwnProfile ? 'Scrivi la tua prima recensione!' : 'Questo utente non ha ancora recensioni.'}</div>
+          ${isOwnProfile ? '<a href="recensione.html" class="btn btn-primary">＋ Prima recensione</a>' : ''}
+        </div>`;
+      return;
+    }
+    grid.innerHTML = reviews.map(r => renderReviewCard(r)).join('');
+  } catch {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-state-text">Errore nel caricamento</div></div>`;
+  }
+}
+
+function renderReviewCard(r) {
+  const av    = (r.display_name || r.username || '?')[0].toUpperCase();
+  const stars = Array.from({length:5}, (_,i) => `<span class="star${i < r.rating ? ' on' : ''}">★</span>`).join('');
+  const tracks = (r.fav_tracks_json || []).slice(0, 3)
+    .map(t => `<span class="track-pill">♪ ${escapeHtml(t)}</span>`).join('');
+  const deleteBtn = isOwnProfile
+    ? `<button class="action-btn" title="Elimina recensione" style="color:var(--coral)" onclick="event.stopPropagation();deleteReview(${r.review_id})">🗑</button>`
+    : '';
+  return `
+    <div class="review-card" id="rc-${r.review_id}" onclick="goToReview(${r.review_id})">
+      <div class="rc-album-header">
+        <div class="rc-cover">
+          ${r.cover_url ? `<img src="${r.cover_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px" />` : '🎵'}
+        </div>
+        <div class="rc-album-info">
+          <div class="rc-title">${escapeHtml(r.album_title)}</div>
+          <div class="rc-artist">${escapeHtml(r.artist)}</div>
+          ${r.genre ? `<span class="rc-genre">${escapeHtml(r.genre)}</span>` : ''}
+          <div class="rc-stars">${stars}</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <p class="rc-text">${escapeHtml(r.body)}</p>
+        ${tracks ? `<div class="rc-tracks">${tracks}</div>` : ''}
+      </div>
+      <div class="rc-footer">
+        <div class="rc-user">
+          <div class="avatar" style="width:28px;height:28px;font-size:.7rem;">${av}</div>
+          <div>
+            <a class="rc-user-name" href="profilo.html?id=${r.user_id}"
+              onclick="event.stopPropagation()"
+              style="text-decoration:none;color:inherit;cursor:pointer"
+              onmouseover="this.style.color='var(--honey)'"
+              onmouseout="this.style.color=''">${escapeHtml(r.display_name || r.username)}</a>
+            <div class="rc-date">${formatRelativeDate(r.created_at)}</div>
+          </div>
+        </div>
+        <div class="rc-actions">
+          <span class="action-btn">👍 ${r.likes_count ?? 0}</span>
+          <span class="action-btn">💬 ${r.comments_count ?? 0}</span>
+          ${deleteBtn}
+        </div>
+      </div>
+    </div>`;
+}
+
+async function deleteReview(reviewId) {
+  if (!confirm('Vuoi davvero eliminare questa recensione? L\'operazione è irreversibile.')) return;
+  try {
+    await Reviews.delete(reviewId);
+    // Remove from DOM
+    const el = document.getElementById('rc-' + reviewId);
+    if (el) el.remove();
+    // Update count
+    const st = document.getElementById('stat-reviews');
+    if (st) st.textContent = Math.max(0, parseInt(st.textContent) - 1);
+    showToast('Recensione eliminata');
+    // If grid empty, show empty state
+    const grid = document.getElementById('reviews-grid');
+    if (!grid.children.length) loadReviews(profileUser.id);
+  } catch (err) {
+    showToast('Errore: ' + err.message);
+  }
+}
+
+function goToReview(id) {
+  sessionStorage.setItem('hm_review', id);
+  window.location.href = 'dettaglio.html';
+}
+
+// ── Follow ──────────────────────────────────────────────────
+
+async function toggleFollow() {
+  if (!currentUser) { window.location.href = 'accedi.html'; return; }
+  const btn = document.getElementById('follow-btn');
+  btn.disabled = true;
+  try {
+    const { following } = await Users.toggleFollow(profileUser.id, !isFollowing);
+    isFollowing = following;
+    btn.classList.toggle('following', isFollowing);
+    btn.textContent = isFollowing ? '✓ Seguito' : 'Segui';
+    // Update follower count
+    const cnt = document.getElementById('stat-followers');
+    cnt.textContent = Math.max(0, parseInt(cnt.textContent) + (isFollowing ? 1 : -1));
+    showToast(isFollowing ? 'Ora segui questo utente!' : 'Non segui più questo utente');
+  } catch (err) { showToast('Errore: ' + err.message); }
+  btn.disabled = false;
+}
+
+// ── Logout ──────────────────────────────────────────────────
+
+function logout() {
+  if (confirm('Vuoi davvero uscire?')) Auth.logout();
+}
+
+// ── Edit modal ──────────────────────────────────────────────
+
+function openEditModal() {
+  if (!currentUser) return;
+  document.getElementById('edit-display-name').value  = currentUser.display_name || '';
+  document.getElementById('edit-bio').value           = currentUser.bio          || '';
+  document.getElementById('edit-avatar-url').value    = currentUser.avatar_url   || '';
+  document.getElementById('edit-current-password').value = '';
+  document.getElementById('edit-new-password').value      = '';
+  document.getElementById('avatar-upload-status').textContent = '';
+  const preview = document.getElementById('avatar-preview');
+  const initials = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
+  if (currentUser.avatar_url) {
+    preview.innerHTML = `<img src="${escapeHtml(currentUser.avatar_url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${initials}'" />`;
+  } else {
+    preview.textContent = initials;
+  }
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+// ── Avatar upload ────────────────────────────────────────────
+
+async function onAvatarFileChange(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('avatar-upload-status');
+  const preview  = document.getElementById('avatar-preview');
+  statusEl.style.color = 'var(--text-muted)';
+  statusEl.textContent = 'Caricamento…';
+  try {
+    const { user, avatar_url } = await Users.uploadAvatar(file);
+    document.getElementById('edit-avatar-url').value = avatar_url;
+    preview.innerHTML = `<img src="${avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;" />`;
+    statusEl.style.color = 'var(--mint)';
+    statusEl.textContent = '✓ Foto caricata!';
+    Auth.saveSession(localStorage.getItem('hm_token'), user);
+    currentUser = user;
+  } catch (err) {
+    statusEl.style.color = 'var(--coral)';
+    statusEl.textContent = 'Errore: ' + err.message;
+  }
+}
+
+// ── Followers / Following modal ───────────────────────────────
+
+async function openFollowModal(type) {
+  const modal = document.getElementById('follow-modal');
+  const title = document.getElementById('follow-modal-title');
+  const list  = document.getElementById('follow-modal-list');
+
+  title.textContent = type === 'followers' ? 'Seguaci' : 'Seguiti';
+  list.innerHTML = '<div style="color:var(--text-dim);font-size:.85rem;text-align:center;padding:40px 0;">Caricamento…</div>';
+  modal.classList.add('open');
+
+  try {
+    const userId = profileUser.id;
+    const res = type === 'followers'
+      ? await Users.followers(userId)
+      : await Users.userFollowing(userId);
+
+    const users = res.users || [];
+    if (!users.length) {
+      list.innerHTML = `<div style="color:var(--text-dim);font-size:.85rem;text-align:center;padding:40px 0;">${type === 'followers' ? 'Nessuno segue ancora questo utente' : 'Non segue ancora nessuno'}</div>`;
+      return;
+    }
+
+    list.innerHTML = users.map(u => {
+      const av = (u.display_name || u.username || '?')[0].toUpperCase();
+      const isF = u.is_following || false;
+      const followBtn = currentUser && currentUser.id !== u.id
+        ? `<button class="follow-btn${isF ? ' following' : ''}" id="fmb-${u.id}" onclick="toggleFollowInModal(${u.id})">${isF ? '✓ Seguito' : 'Segui'}</button>`
+        : '';
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+          <a href="profilo.html?id=${u.id}" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;color:inherit;text-decoration:none;">
+            <div class="avatar" style="width:42px;height:42px;font-size:.95rem;flex-shrink:0;">${av}</div>
+            <div style="min-width:0;">
+              <div style="font-size:.88rem;font-weight:600;">${escapeHtml(u.display_name || u.username)}</div>
+              <div style="font-size:.74rem;color:var(--text-dim);">@${escapeHtml(u.username)} · ${u.followers_count} seguaci</div>
+            </div>
+          </a>
+          ${followBtn}
+        </div>`;
+    }).join('');
+  } catch (err) {
+    list.innerHTML = `<div style="color:var(--coral);font-size:.85rem;text-align:center;padding:40px 0;">Errore: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function closeFollowModal(e) {
+  if (!e || e.target === document.getElementById('follow-modal')) {
+    document.getElementById('follow-modal').classList.remove('open');
+  }
+}
+
+async function toggleFollowInModal(userId) {
+  const btn = document.getElementById('fmb-' + userId);
+  if (!btn) return;
+  const wasFollowing = btn.classList.contains('following');
+  btn.disabled = true;
+  try {
+    const { following } = await Users.toggleFollow(userId, !wasFollowing);
+    btn.classList.toggle('following', following);
+    btn.textContent = following ? '✓ Seguito' : 'Segui';
+    showToast(following ? 'Ora segui questo utente!' : 'Non segui più questo utente');
+  } catch (err) { showToast('Errore: ' + err.message); }
+  btn.disabled = false;
+}
+
+function closeEditModal(e) {
+  if (!e || e.target === document.getElementById('edit-modal')) {
+    document.getElementById('edit-modal').classList.remove('open');
+  }
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('save-profile-btn');
+  btn.disabled = true; btn.textContent = 'Salvataggio…';
+
+  const payload = {
+    display_name:     document.getElementById('edit-display-name').value.trim(),
+    bio:              document.getElementById('edit-bio').value.trim(),
+    avatar_url:       document.getElementById('edit-avatar-url').value.trim(),
+    current_password: document.getElementById('edit-current-password').value,
+    new_password:     document.getElementById('edit-new-password').value
+  };
+
+  // Remove password fields if empty
+  if (!payload.new_password)     { delete payload.new_password; delete payload.current_password; }
+  if (!payload.current_password) { delete payload.current_password; }
+
+  try {
+    const updated = await Users.updateProfile(payload);
+    Auth.saveSession(localStorage.getItem('hm_token'), updated);
+    currentUser = updated;
+    profileUser = { ...profileUser, ...updated };
+    renderProfile(profileUser);
+    closeEditModal();
+    showToast('Profilo aggiornato!');
+  } catch (err) {
+    showToast('Errore: ' + err.message);
+  }
+
+  btn.disabled = false; btn.textContent = 'Salva modifiche';
+}
+
+// ── Helpers ─────────────────────────────────────────────────
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+</script>
+</body>
+</html>

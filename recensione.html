@@ -243,12 +243,29 @@
             <span class="step-block-title"><span>🎵</span> Cerca album</span>
             <span class="step-block-badge badge-spotify">Spotify API</span>
           </div>
-          <div class="spotify-row">
-            <input class="form-input" id="spotify-input" placeholder="Cerca per titolo, artista…" oninput="spotifySearch(this.value)" />
-            <button class="btn btn-primary" style="flex-shrink:0" onclick="spotifySearch(document.getElementById('spotify-input').value)">Cerca</button>
+
+          <!-- Search row (hidden when album confirmed) -->
+          <div id="album-search-area">
+            <div class="spotify-row">
+              <input class="form-input" id="spotify-input" placeholder="Cerca per titolo, artista…" oninput="spotifySearch(this.value)" />
+              <button class="btn btn-primary" style="flex-shrink:0" onclick="spotifySearch(document.getElementById('spotify-input').value)">Cerca</button>
+              <!-- Confirm button: appears next to search bar when an album is selected -->
+              <button class="btn btn-gold" id="confirm-album-btn" style="flex-shrink:0;display:none" onclick="confirmAlbum()">✓ Conferma →</button>
+            </div>
+            <div class="spotify-results" id="spotify-results">
+              <p class="no-results" style="text-align:left;">Digita almeno 2 caratteri per cercare</p>
+            </div>
           </div>
-          <div class="spotify-results" id="spotify-results">
-            <p class="no-results" style="text-align:left;">Digita almeno 2 caratteri per cercare</p>
+
+          <!-- Confirmed album summary (shown after confirmation) -->
+          <div id="album-confirmed-bar" style="display:none;align-items:center;gap:14px;">
+            <div id="conf-cover" style="width:52px;height:52px;border-radius:8px;background:var(--hive-600);
+              display:flex;align-items:center;justify-content:center;font-size:1.4rem;overflow:hidden;flex-shrink:0;">🎵</div>
+            <div style="flex:1;min-width:0;">
+              <div id="conf-title" style="font-weight:700;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+              <div id="conf-artist" style="font-size:.78rem;color:var(--text-muted);"></div>
+            </div>
+            <button class="btn btn-ghost" style="font-size:.78rem;padding:7px 14px;" onclick="changeAlbum()">Cambia</button>
           </div>
         </div>
 
@@ -256,11 +273,11 @@
         <div class="step-block" id="block-tracks" style="display:none">
           <div class="step-block-head">
             <span class="step-block-title"><span>🎧</span> Tracce preferite</span>
-            <span class="step-block-badge badge-opt">Opzionale · max 5</span>
+            <span class="step-block-badge badge-opt">Opzionale · max 3</span>
           </div>
-          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:0">Seleziona le tracce che ti hanno colpito di più.</p>
+          <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:0">Seleziona fino a 3 tracce che ti hanno colpito di più.</p>
           <div class="tracks-grid" id="tracks-grid"></div>
-          <p class="tracks-limit-note" id="tracks-note">0 / 5 selezionate</p>
+          <p class="tracks-limit-note" id="tracks-note">0 / 3 selezionate</p>
         </div>
 
         <!-- STEP 3: Rating -->
@@ -293,7 +310,6 @@
 
         <div class="action-row">
           <a href="home.html" class="btn btn-ghost">Annulla</a>
-          <button class="btn btn-ghost" onclick="saveDraft()">💾 Salva bozza</button>
           <button class="btn btn-gold" onclick="publish()" style="padding:12px 28px;">Pubblica recensione →</button>
         </div>
       </div>
@@ -336,13 +352,14 @@
 
 <div id="toast"></div>
 
-<script src="api.js"></script>
+<script src="api.js?v=5"></script>
 <script>
 const RATINGS = ['','⭐ Pessimo','⭐⭐ Scarso','⭐⭐⭐ Nella media','⭐⭐⭐⭐ Buono','⭐⭐⭐⭐⭐ Capolavoro'];
 let selectedAlbum = null;
 let selectedTracks = new Set();
 let rating = 0;
 let currentUser = null;
+let _albumResults = [];
 
 (async function init() {
   if (!Auth.isLoggedIn()) { window.location.href = 'accedi.html'; return; }
@@ -365,39 +382,89 @@ function spotifySearch(q) {
     try {
       const { albums } = await Albums.search(q);
       if (!albums.length) { res.innerHTML = '<p class="no-results">Nessun album trovato</p>'; return; }
-      res.innerHTML = albums.map(a => `
+      _albumResults = albums;
+      res.innerHTML = albums.map((a, idx) => `
         <div class="album-result${selectedAlbum?.spotify_id === a.spotify_id ? ' selected' : ''}"
-          onclick="selectAlbum(${JSON.stringify(JSON.stringify(a))})">
+          onclick="selectAlbum(${idx})">
           <div class="ar-cover">
             ${a.cover_url ? `<img src="${a.cover_url}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">` : '🎵'}
           </div>
           <div class="ar-info">
             <div class="ar-title">${a.title}</div>
             <div class="ar-artist">${a.artist}</div>
-            <div class="ar-tracks-count">${a.release_year || ''} · ${a.tracks?.length ?? '?'} tracce</div>
+            <div class="ar-tracks-count">${a.release_year || ''}</div>
           </div>
           <div class="sel-badge">✓</div>
         </div>`).join('');
     } catch (err) { res.innerHTML = `<p class="no-results">Errore: ${err.message}</p>`; }
-  }, 400);
+  }, 350);
 }
 
-function selectAlbum(jsonStr) {
-  selectedAlbum = JSON.parse(jsonStr);
+async function confirmAlbum() {
+  if (!selectedAlbum) return;
+  // Hide search area, show confirmed bar
+  document.getElementById('album-search-area').style.display = 'none';
+  const bar = document.getElementById('album-confirmed-bar');
+  bar.style.display = 'flex';
+  document.getElementById('conf-title').textContent  = selectedAlbum.title;
+  document.getElementById('conf-artist').textContent = selectedAlbum.artist;
+  const covEl = document.getElementById('conf-cover');
+  covEl.innerHTML = selectedAlbum.cover_url
+    ? `<img src="${selectedAlbum.cover_url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`
+    : '🎵';
+  // Load tracks and scroll to next step
+  await loadTracksForSelected();
+  updatePreview();
+  document.getElementById('block-tracks').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function changeAlbum() {
+  // Show search area again, hide confirmed bar
+  document.getElementById('album-confirmed-bar').style.display = 'none';
+  document.getElementById('album-search-area').style.display   = 'block';
+  document.getElementById('confirm-album-btn').style.display   = 'none';
+  // Reset selection
+  selectedAlbum = null;
   selectedTracks.clear();
   document.querySelectorAll('.album-result').forEach(el => el.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
-  const tb = document.getElementById('block-tracks');
-  tb.style.display = 'block';
-  const tracks = selectedAlbum.tracks || [];
-  document.getElementById('tracks-grid').innerHTML = tracks.map((t, i) => `
-    <div class="track-item" id="ti-${i}" onclick="toggleTrack(${i}, ${JSON.stringify(t)})">
-      <span class="track-num">${String(i+1).padStart(2,'0')}</span>
-      <span class="track-name">${t}</span>
-      <div class="track-check"></div>
-    </div>`).join('');
-  updateSteps(2);
+  document.getElementById('block-tracks').style.display = 'none';
+  updateSteps(1);
   updatePreview();
+}
+
+function selectAlbum(idx) {
+  selectedAlbum = _albumResults[idx];
+  selectedTracks.clear();
+  document.querySelectorAll('.album-result').forEach((el, i) => el.classList.toggle('selected', i === idx));
+  // Show confirm button next to the search bar
+  document.getElementById('confirm-album-btn').style.display = 'inline-flex';
+  updatePreview();
+}
+
+async function loadTracksForSelected() {
+  const tb   = document.getElementById('block-tracks');
+  const grid = document.getElementById('tracks-grid');
+  tb.style.display = 'block';
+  grid.innerHTML   = '<p style="color:var(--text-dim);font-size:.82rem;padding:10px 0">Caricamento tracce…</p>';
+  document.getElementById('tracks-note').textContent = '0 / 3 selezionate';
+  updateSteps(2);
+
+  try {
+    const tracks = await Albums.getTracks(selectedAlbum.spotify_id);
+    selectedAlbum.tracks = tracks;
+    if (!tracks.length) {
+      grid.innerHTML = '<p style="color:var(--text-dim);font-size:.82rem;padding:10px 0">Nessuna traccia trovata per questo album</p>';
+      return;
+    }
+    grid.innerHTML = tracks.map((t, i) => `
+      <div class="track-item" id="ti-${i}" onclick="toggleTrack(${i}, ${JSON.stringify(t).replace(/"/g,'&quot;')})">
+        <span class="track-num">${String(i + 1).padStart(2, '0')}</span>
+        <span class="track-name">${t}</span>
+        <div class="track-check"></div>
+      </div>`).join('');
+  } catch (err) {
+    grid.innerHTML = `<p style="color:var(--coral);font-size:.82rem;padding:10px 0">Errore caricamento tracce: ${err.message}</p>`;
+  }
 }
 
 function toggleTrack(i, name) {
@@ -406,12 +473,12 @@ function toggleTrack(i, name) {
     document.getElementById('ti-'+i).classList.remove('on');
     document.getElementById('ti-'+i).querySelector('.track-check').textContent = '';
   } else {
-    if (selectedTracks.size >= 5) { showToast('Massimo 5 tracce selezionabili'); return; }
+    if (selectedTracks.size >= 3) { showToast('Massimo 3 tracce selezionabili'); return; }
     selectedTracks.add(name);
     document.getElementById('ti-'+i).classList.add('on');
     document.getElementById('ti-'+i).querySelector('.track-check').textContent = '✓';
   }
-  document.getElementById('tracks-note').textContent = `${selectedTracks.size} / 5 selezionate`;
+  document.getElementById('tracks-note').textContent = `${selectedTracks.size} / 3 selezionate`;
   updatePreview();
 }
 
@@ -464,17 +531,6 @@ function updatePreview() {
   ta.innerHTML = txt ? `<p class="preview-text">${txt}</p>` : '<p class="preview-placeholder">La tua recensione apparirà qui…</p>';
   document.getElementById('prev-tracks').innerHTML =
     Array.from(selectedTracks).slice(0,3).map(t => `<span class="track-pill">♪ ${t}</span>`).join('');
-}
-
-async function saveDraft() {
-  if (!selectedAlbum && !rating && !document.getElementById('review-text').value.trim()) { showToast('Niente da salvare'); return; }
-  const btn = event.currentTarget;
-  btn.disabled = true; btn.textContent = 'Salvataggio…';
-  try {
-    await Reviews.saveDraft({ spotify_id: selectedAlbum?.spotify_id ?? null, rating: rating || null, body: document.getElementById('review-text').value.trim() || null, fav_tracks: Array.from(selectedTracks) });
-    showToast('Bozza salvata! 💾');
-  } catch (err) { showToast('Errore: ' + err.message); }
-  finally { btn.disabled = false; btn.textContent = '💾 Salva bozza'; }
 }
 
 async function publish() {

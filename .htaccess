@@ -1,0 +1,13 @@
+# Inoltra l'header Authorization a PHP (Apache di default lo strippa
+# e getAuthUser() in api.php non riesce a leggere il Bearer token).
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .+
+    RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+
+# Alternativa moderna (Apache 2.4.13+): lascia passare l'Authorization
+# header direttamente a PHP senza bisogno di rewrite.
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>

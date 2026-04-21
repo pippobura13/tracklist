@@ -110,6 +110,26 @@
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 28px;
 }
+/* User search */
+.user-search-bar {
+  display: flex; gap: 10px; margin-bottom: 28px; position: relative;
+}
+.user-search-bar input { flex: 1; max-width: 400px; }
+.user-search-results {
+  position: absolute; top: calc(100% + 6px); left: 0;
+  background: var(--hive-800); border: 1px solid var(--border-honey);
+  border-radius: var(--radius-sm); padding: 8px;
+  min-width: 360px; max-width: 480px; z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+.user-search-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px; border-radius: var(--radius-xs); cursor: pointer;
+  transition: background var(--trans);
+}
+.user-search-item:hover { background: rgba(245,166,35,.07); }
+.user-search-empty { font-size: .82rem; color: var(--text-dim); padding: 8px 12px; }
+
 .sort-label { font-size: .78rem; color: var(--text-muted); }
 .sort-btns { display: flex; gap: 4px; }
 .sort-btn {
@@ -122,10 +142,75 @@
 
 .load-more-wrap { text-align: center; padding: 40px 0 0; }
 
+/* Home tabs */
+.home-tabs-bar {
+  border-bottom: 1px solid var(--border);
+  padding-top: 64px; /* compensate for fixed navbar */
+  display: none;
+}
+.home-tabs-inner {
+  display: flex;
+  max-width: 1200px; margin: 0 auto; padding: 0 44px;
+}
+.home-tab {
+  padding: 14px 24px; font-size: .9rem; font-weight: 600;
+  color: var(--text-muted); border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: all var(--trans);
+  display: flex; align-items: center; gap: 8px;
+  background: none; border-top: none; border-left: none; border-right: none;
+}
+.home-tab:hover { color: var(--text); }
+.home-tab.active { color: var(--honey); border-bottom-color: var(--honey); }
+.home-tab-badge {
+  background: var(--honey); color: var(--hive-950);
+  padding: 1px 7px; border-radius: 10px;
+  font-size: .68rem; font-weight: 700; display: none;
+}
+
+/* Notifications full page */
+.notif-page { padding: 32px 44px 80px; max-width: 1200px; margin: 0 auto; }
+.notif-page-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+}
+.notif-page-title { font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 700; }
+.notif-page-list {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+
+.notif-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  transition: background var(--trans); cursor: pointer;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: rgba(245,166,35,.03); }
+.notif-item.unread { background: rgba(245,166,35,.05); }
+.notif-cover {
+  width: 48px; height: 48px; border-radius: 8px; flex-shrink: 0;
+  background: var(--hive-600); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.notif-cover img { width: 100%; height: 100%; object-fit: cover; }
+.notif-content { flex: 1; min-width: 0; }
+.notif-text { font-size: .85rem; line-height: 1.4; margin-bottom: 2px; }
+.notif-text strong { color: var(--honey); font-weight: 600; }
+.notif-time { font-size: .72rem; color: var(--text-dim); }
+.notif-empty {
+  padding: 40px 20px; text-align: center; color: var(--text-dim); font-size: .85rem;
+}
+.dismiss-btn {
+  font-size: .76rem; color: var(--text-muted); padding: 6px 12px;
+  border-radius: var(--radius-xs); transition: all var(--trans);
+}
+.dismiss-btn:hover { color: var(--honey); background: rgba(245,166,35,.08); }
+
 @media (max-width: 860px) {
   .hero { grid-template-columns: 1fr; padding: 40px 18px 40px; gap: 36px; }
   .hero-visual { display: none; }
   .feed-section { padding: 0 18px 60px; }
+  .home-tabs-bar { padding: 0 18px; }
+  .notif-page { padding: 24px 18px 60px; }
 }
 </style>
 </head>
@@ -173,12 +258,56 @@
   </section>
 </div>
 
+<!-- TAB BAR (only for logged users) -->
+<div class="home-tabs-bar" id="home-tabs-bar">
+  <div class="home-tabs-inner">
+    <button class="home-tab active" id="tab-btn-feed" onclick="switchTab('feed')">🍯 Feed</button>
+    <button class="home-tab" id="tab-btn-notif" onclick="switchTab('notif')">
+      🔔 Notifiche <span class="home-tab-badge" id="notif-tab-badge">0</span>
+    </button>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS TAB CONTENT -->
+<div id="tab-notif-content" style="display:none">
+  <div class="notif-page">
+    <div class="notif-page-header">
+      <span class="notif-page-title">🔔 Notifiche</span>
+      <button class="dismiss-btn" onclick="clearNotifications()">Azzera</button>
+    </div>
+    <div class="notif-page-list" id="notif-list">
+      <div class="notif-empty">Nessuna nuova notifica dalle persone che segui nelle ultime 24 ore</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEED TAB CONTENT -->
+<div id="tab-feed-content">
 <section class="feed-section" id="feed-anchor">
   <div class="feed-head">
     <h2 class="section-title">Ultime Recensioni</h2>
     <span class="live-dot">In tempo reale</span>
   </div>
-  <div class="filters" id="filters"></div>
+
+  <!-- Search bars: users & albums -->
+  <div class="user-search-bar" id="user-search-bar" style="flex-wrap:wrap">
+    <div style="position:relative;flex:1;min-width:240px;max-width:400px;">
+      <input class="form-input" id="user-search-input" type="text"
+        placeholder="🔍  Cerca un utente…"
+        oninput="onUserSearch(this.value)"
+        onblur="setTimeout(()=>hideUserResults(),200)"
+        autocomplete="off" />
+      <div id="user-search-results" style="display:none" class="user-search-results"></div>
+    </div>
+    <div style="position:relative;flex:1;min-width:240px;max-width:400px;">
+      <input class="form-input" id="album-search-input" type="text"
+        placeholder="💿  Cerca recensioni per album…"
+        oninput="onAlbumSearch(this.value)"
+        autocomplete="off" />
+    </div>
+    <button class="btn btn-ghost" id="clear-search-btn" style="display:none;font-size:.78rem;padding:8px 14px;" onclick="clearAlbumSearch()">✕ Cancella filtro</button>
+  </div>
+
   <div class="sort-bar">
     <span class="sort-label">Ordina per:</span>
     <div class="sort-btns">
@@ -192,16 +321,19 @@
     <button class="btn btn-ghost" style="padding:12px 34px;" onclick="loadMore()">Carica altre recensioni</button>
   </div>
 </section>
+</div><!-- end tab-feed-content -->
 
 <div id="toast"></div>
 
-<script src="api.js"></script>
+<script src="api.js?v=5"></script>
 <script>
-const GENRES = ["Tutti","Rock","Jazz","Hip-Hop","Elettronica","R&B","Folk","Pop","Classica"];
-let activeFilter = "Tutti";
-let activeSort   = "new";
+let activeSort  = "new";
+let activeQuery = "";
 let currentPage  = 1;
 let currentUser  = null;
+let notificationsCache = [];
+let notifPollTimer = null;
+let _albumSearchTimer = null;
 
 (async function init() {
   if (Auth.isLoggedIn()) {
@@ -217,6 +349,10 @@ let currentUser  = null;
       <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
       <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">${av}</a>`;
     document.getElementById('hero-wrap').style.display = 'none';
+    
+    // Show tab bar and start polling
+    document.getElementById('home-tabs-bar').style.display = 'block';
+    startNotificationsPolling();
   } else {
     nr.innerHTML = `
       <a href="accedi.html" class="btn btn-ghost">Accedi</a>
@@ -228,12 +364,104 @@ let currentUser  = null;
     document.getElementById('stat-users').textContent   = formatCount(users_count);
     document.getElementById('stat-albums').textContent  = formatCount(albums_count);
   } catch {}
-  const fc = document.getElementById('filters');
-  fc.innerHTML = GENRES.map(g =>
-    `<button class="filter-chip${g==='Tutti'?' on':''}" onclick="setFilter(this,'${g}')">${g}</button>`
-  ).join('');
   await renderGrid();
 })();
+
+// ========================================
+// NOTIFICATIONS POLLING
+// ========================================
+
+function startNotificationsPolling() {
+  loadNotifications();
+  notifPollTimer = setInterval(loadNotifications, 12000);
+}
+
+async function loadNotifications() {
+  if (!currentUser) return;
+  try {
+    const { notifications } = await Notifications.get();
+    notificationsCache = notifications || [];
+    renderNotifications(notificationsCache);
+  } catch (err) {
+    console.error('Error loading notifications:', err);
+  }
+}
+
+function renderNotifications(notifications) {
+  const list  = document.getElementById('notif-list');
+  const badge = document.getElementById('notif-tab-badge');
+
+  if (notifications.length > 0) {
+    badge.textContent  = notifications.length;
+    badge.style.display = 'inline';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if (notifications.length === 0) {
+    list.innerHTML = '<div class="notif-empty">Nessuna nuova notifica dalle persone che segui nelle ultime 24 ore</div>';
+    return;
+  }
+
+  list.innerHTML = notifications.map(n => `
+    <div class="notif-item unread" onclick="goDetail(${n.review_id})">
+      <div class="notif-cover">
+        ${n.cover_url ? `<img src="${n.cover_url}" alt="">` : '🎵'}
+      </div>
+      <div class="notif-content">
+        <div class="notif-text">
+          <a href="profilo.html?id=${n.user_id}" onclick="event.stopPropagation()"
+            style="color:var(--honey);font-weight:600;text-decoration:none">${escapeHtml(n.display_name || n.username)}</a>
+          ha recensito <strong>${escapeHtml(n.album_title)}</strong>
+        </div>
+        <div class="notif-time">${formatDate(n.created_at)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function switchTab(tab) {
+  const feedContent  = document.getElementById('tab-feed-content');
+  const notifContent = document.getElementById('tab-notif-content');
+  const feedBtn      = document.getElementById('tab-btn-feed');
+  const notifBtn     = document.getElementById('tab-btn-notif');
+
+  if (tab === 'feed') {
+    feedContent.style.display  = 'block';
+    notifContent.style.display = 'none';
+    feedBtn.classList.add('active');
+    notifBtn.classList.remove('active');
+  } else {
+    feedContent.style.display  = 'none';
+    notifContent.style.display = 'block';
+    feedBtn.classList.remove('active');
+    notifBtn.classList.add('active');
+  }
+}
+
+// ── Album Search ───────────────────────────────────────────
+function onAlbumSearch(value) {
+  clearTimeout(_albumSearchTimer);
+  const clearBtn = document.getElementById('clear-search-btn');
+  _albumSearchTimer = setTimeout(() => {
+    activeQuery = value.trim();
+    clearBtn.style.display = activeQuery ? 'inline-flex' : 'none';
+    renderGrid();
+  }, 300);
+}
+
+function clearAlbumSearch() {
+  document.getElementById('album-search-input').value = '';
+  document.getElementById('clear-search-btn').style.display = 'none';
+  activeQuery = '';
+  renderGrid();
+}
+
+function clearNotifications() {
+  notificationsCache = [];
+  renderNotifications([]);
+  showToast('Notifiche azzerate');
+}
 
 function formatCount(n) {
   if (n >= 1000) return (n / 1000).toFixed(1).replace('.0','') + 'k';
@@ -257,7 +485,7 @@ async function renderGrid(reset = true) {
       <div class="rc-body" style="height:60px;background:var(--hive-700);border-radius:6px;margin-top:12px"></div>
     </article>`).join(''); }
   try {
-    const { reviews } = await Reviews.list({ genre: activeFilter, sort: activeSort, page: currentPage, limit: 8 });
+    const { reviews } = await Reviews.list({ sort: activeSort, page: currentPage, limit: 8, q: activeQuery });
     if (reset) grid.innerHTML = '';
     if (!reviews.length && reset) {
       grid.innerHTML = `<p style="color:var(--text-muted);grid-column:1/-1;padding:40px 0;text-align:center">Nessuna recensione trovata per questo filtro.</p>`;
@@ -291,7 +519,10 @@ async function renderGrid(reset = true) {
                 ${(r.display_name || r.username || '?')[0].toUpperCase()}
               </div>
               <div>
-                <div class="rc-user-name">${r.display_name || r.username}</div>
+                <a class="rc-user-name" href="profilo.html?id=${r.user_id}"
+                  onclick="event.stopPropagation()"
+                  onmouseover="this.style.color='var(--honey)'"
+                  onmouseout="this.style.color=''">${escapeHtml(r.display_name || r.username)}</a>
                 <div class="rc-date">${formatDate(r.created_at)}</div>
               </div>
             </div>
@@ -325,10 +556,6 @@ function formatDate(iso) {
   return d.toLocaleDateString('it-IT', { day:'numeric', month:'short' });
 }
 
-function setFilter(el, g) {
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('on'));
-  el.classList.add('on'); activeFilter = g; renderGrid();
-}
 function setSort(el, s) {
   document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('on'));
   el.classList.add('on'); activeSort = s; renderGrid();
@@ -351,9 +578,53 @@ async function like(reviewId, value, btn) {
 
 async function loadMore() { currentPage++; await renderGrid(false); }
 
+// ── User Search ────────────────────────────────────────────
+let _userSearchTimer = null;
+
+function onUserSearch(value) {
+  clearTimeout(_userSearchTimer);
+  const box = document.getElementById('user-search-results');
+  if (!value || value.length < 2) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = '<p class="user-search-empty">Ricerca…</p>';
+  _userSearchTimer = setTimeout(async () => {
+    try {
+      const { users } = await Users.search(value);
+      if (!users.length) {
+        box.innerHTML = '<p class="user-search-empty">Nessun utente trovato</p>';
+        return;
+      }
+      box.innerHTML = users.map(u => {
+        const av = (u.display_name || u.username || '?')[0].toUpperCase();
+        return `<div class="user-search-item" onmousedown="goToProfile(${u.id})">
+          <div class="avatar" style="width:36px;height:36px;font-size:.82rem;flex-shrink:0;">${av}</div>
+          <div style="min-width:0">
+            <div style="font-size:.86rem;font-weight:600;">${escapeHtml(u.display_name || u.username)}</div>
+            <div style="font-size:.72rem;color:var(--text-dim);">@${escapeHtml(u.username)} · ${u.reviews_count} recensioni · ${u.followers_count} seguaci</div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch { box.innerHTML = '<p class="user-search-empty">Errore nella ricerca</p>'; }
+  }, 350);
+}
+
+function hideUserResults() {
+  document.getElementById('user-search-results').style.display = 'none';
+  document.getElementById('user-search-input').value = '';
+}
+
+function goToProfile(userId) {
+  window.location.href = 'profilo.html?id=' + userId;
+}
+
 function goDetail(id) {
   sessionStorage.setItem('hm_review', id);
   window.location.href = 'dettaglio.html';
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function showToast(msg) {
@@ -361,6 +632,11 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  if (notifPollTimer) clearInterval(notifPollTimer);
+});
 </script>
 </body>
 </html>

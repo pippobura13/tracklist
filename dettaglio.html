@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hive Music — Dettaglio Recensione</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="shared.css" />
+<style>
+.detail-page { padding: 44px 0 80px; }
+.page-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--text-muted); font-size: .85rem; margin-bottom: 28px;
+  transition: color var(--trans);
+}
+.page-back:hover { color: var(--text); }
+
+.detail-layout {
+  display: grid; grid-template-columns: 1fr 340px; gap: 36px; align-items: start;
+}
+
+/* Review Card Full */
+.review-full {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.rf-header {
+  display: flex; gap: 20px; padding: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.rf-cover {
+  width: 140px; height: 140px; border-radius: 14px; flex-shrink: 0;
+  background: var(--hive-600); overflow: hidden;
+  display: flex; align-items: center; justify-content: center; font-size: 3rem;
+}
+.rf-cover img { width: 100%; height: 100%; object-fit: cover; }
+.rf-album-info { flex: 1; }
+.rf-title {
+  font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 900;
+  margin-bottom: 4px;
+}
+.rf-artist { font-size: 1rem; color: var(--text-muted); margin-bottom: 12px; }
+.rf-genre {
+  display: inline-block; padding: 4px 14px; border-radius: 14px;
+  font-size: .75rem; font-weight: 600;
+  background: rgba(245,166,35,.08); color: var(--honey);
+  margin-bottom: 12px;
+}
+.rf-stars { display: flex; gap: 2px; font-size: 1.4rem; }
+.rf-stars .star { color: var(--text-dim); }
+.rf-stars .star.on { color: var(--honey); }
+
+.rf-body { padding: 24px; }
+.rf-text { font-size: .95rem; line-height: 1.8; color: var(--text); margin-bottom: 20px; }
+
+.rf-tracks-section { margin-bottom: 24px; }
+.rf-tracks-title {
+  font-size: .8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-muted); margin-bottom: 12px;
+}
+.rf-tracks-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.rf-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px; border-top: 1px solid var(--border);
+  background: rgba(26,21,16,.4);
+}
+.rf-user {
+  display: flex; align-items: center; gap: 12px;
+}
+.rf-user-info .name { font-weight: 600; font-size: .9rem; }
+.rf-user-info .date { font-size: .75rem; color: var(--text-dim); }
+.rf-actions { display: flex; gap: 8px; }
+
+/* Comments Section */
+.comments-section {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-top: 24px; overflow: hidden;
+}
+.comments-header {
+  padding: 18px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.comments-title { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 700; }
+.comments-count { font-size: .8rem; color: var(--text-muted); }
+
+.comment-form { padding: 18px 24px; border-bottom: 1px solid var(--border); }
+.comment-form-inner { display: flex; gap: 12px; }
+.comment-input {
+  flex: 1; padding: 12px 16px;
+  background: rgba(26,21,16,.9); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-size: .88rem; resize: none; outline: none;
+  transition: border-color var(--trans);
+}
+.comment-input:focus { border-color: var(--honey); }
+.comment-input::placeholder { color: var(--text-dim); }
+
+.comments-list { max-height: 400px; overflow-y: auto; }
+.comment-item {
+  display: flex; gap: 12px; padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.comment-item:last-child { border-bottom: none; }
+.comment-body { flex: 1; }
+.comment-meta {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.comment-author { font-weight: 600; font-size: .85rem; }
+.comment-date { font-size: .72rem; color: var(--text-dim); }
+.comment-text { font-size: .88rem; color: var(--text-muted); line-height: 1.6; }
+
+.no-comments {
+  padding: 40px 24px; text-align: center;
+  color: var(--text-dim); font-size: .88rem;
+}
+
+/* Sidebar */
+.sidebar-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 20px; overflow: hidden;
+}
+.sidebar-card-head {
+  padding: 16px 18px; border-bottom: 1px solid var(--border);
+  font-family: 'Fraunces', serif; font-size: .95rem; font-weight: 700;
+}
+.sidebar-card-body { padding: 16px 18px; }
+
+.author-card {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+}
+.author-info { flex: 1; }
+.author-name { font-weight: 600; font-size: .9rem; margin-bottom: 2px; }
+.author-meta { font-size: .75rem; color: var(--text-dim); }
+.follow-author-btn {
+  padding: 8px 18px; border-radius: 18px;
+  font-size: .78rem; font-weight: 700;
+  border: 1px solid var(--border-honey); color: var(--honey);
+  transition: all var(--trans);
+}
+.follow-author-btn:hover { background: rgba(245,166,35,.08); }
+.follow-author-btn.following {
+  background: rgba(92,224,192,.08); border-color: var(--mint); color: var(--mint);
+}
+
+/* More from author */
+.more-item {
+  display: flex; gap: 12px; padding: 12px 0;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.more-item:last-child { border-bottom: none; }
+.more-item:hover .more-title { color: var(--honey); }
+.more-cover {
+  width: 48px; height: 48px; border-radius: 8px; flex-shrink: 0;
+  background: var(--hive-600); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.more-cover img { width: 100%; height: 100%; object-fit: cover; }
+.more-info { flex: 1; min-width: 0; }
+.more-title {
+  font-size: .85rem; font-weight: 600; margin-bottom: 2px;
+  transition: color var(--trans);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.more-artist { font-size: .75rem; color: var(--text-dim); }
+
+@media (max-width: 900px) {
+  .detail-layout { grid-template-columns: 1fr; }
+  .rf-header { flex-direction: column; align-items: center; text-align: center; }
+  .rf-cover { width: 180px; height: 180px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="home.html">
+    <div class="brand-mark">🐝</div>
+    <span class="brand-name">Hive <b>Music</b></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="home.html">🏠 Home</a></li>
+    <li><a href="seguiti.html">👥 Seguiti</a></li>
+    <li><a href="messaggi.html">💬 Messaggi</a></li>
+  </ul>
+  <div class="nav-right" id="nav-right"></div>
+</nav>
+
+<div class="page-wrap">
+  <div class="container detail-page">
+    <a class="page-back" href="javascript:history.back()">← Indietro</a>
+    
+    <div class="detail-layout">
+      <div>
+        <!-- Review Full -->
+        <div class="review-full" id="review-full">
+          <div class="rf-header">
+            <div class="rf-cover" id="rf-cover">🎵</div>
+            <div class="rf-album-info">
+              <div class="rf-title" id="rf-title">Caricamento…</div>
+              <div class="rf-artist" id="rf-artist"></div>
+              <span class="rf-genre" id="rf-genre"></span>
+              <div class="rf-stars" id="rf-stars"></div>
+            </div>
+          </div>
+          <div class="rf-body">
+            <p class="rf-text" id="rf-text"></p>
+            <div class="rf-tracks-section" id="rf-tracks-section" style="display:none">
+              <div class="rf-tracks-title">🎧 Tracce preferite</div>
+              <div class="rf-tracks-list" id="rf-tracks"></div>
+            </div>
+          </div>
+          <div class="rf-footer">
+            <div class="rf-user">
+              <div class="avatar" id="rf-avatar" style="width:42px;height:42px;font-size:.95rem;cursor:pointer;" onclick="goToAuthorProfile()">?</div>
+              <div class="rf-user-info">
+                <div class="name" id="rf-username"></div>
+                <div class="date" id="rf-date"></div>
+              </div>
+            </div>
+            <div class="rf-actions">
+              <button class="action-btn" id="like-btn" onclick="likeReview(1)">👍 <span id="likes-count">0</span></button>
+              <button class="action-btn" id="dislike-btn" onclick="likeReview(-1)">👎 <span id="dislikes-count">0</span></button>
+              <button class="action-btn" id="delete-btn" onclick="deleteThisReview()" style="display:none;color:var(--coral);border-color:rgba(255,107,107,.3)" title="Elimina recensione">🗑 Elimina</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comments -->
+        <div class="comments-section">
+          <div class="comments-header">
+            <span class="comments-title">💬 Commenti</span>
+            <span class="comments-count" id="comments-count">0 commenti</span>
+          </div>
+          <div class="comment-form" id="comment-form" style="display:none">
+            <div class="comment-form-inner">
+              <textarea class="comment-input" id="comment-input" rows="2" placeholder="Scrivi un commento…"></textarea>
+              <button class="btn btn-primary" onclick="postComment()">Invia</button>
+            </div>
+          </div>
+          <div class="comments-list" id="comments-list">
+            <div class="no-comments">Nessun commento. Sii il primo!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-head">👤 Autore</div>
+          <div class="sidebar-card-body">
+            <div class="author-card" id="author-card" style="cursor:pointer" onclick="goToAuthorProfile()">
+              <div class="avatar" id="author-avatar" style="width:52px;height:52px;font-size:1.1rem;">?</div>
+              <div class="author-info">
+                <div class="author-name" id="author-name">—</div>
+                <div class="author-meta" id="author-meta"></div>
+              </div>
+            </div>
+            <button class="follow-author-btn" id="follow-btn" onclick="toggleFollow()" style="width:100%">Segui</button>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-card-head">🎵 Altre recensioni</div>
+          <div class="sidebar-card-body" id="more-reviews">
+            <p style="font-size:.85rem;color:var(--text-dim)">Nessuna altra recensione</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="api.js?v=5"></script>
+<script>
+let currentUser = null;
+let reviewData = null;
+let authorId = null;
+let isFollowing = false;
+let allComments = [];
+
+(async function init() {
+  // Check login
+  if (Auth.isLoggedIn()) {
+    try {
+      currentUser = await Auth.me();
+      Auth.saveSession(localStorage.getItem('hm_token'), currentUser);
+    } catch { currentUser = null; }
+  }
+  
+  // Update navbar
+  const nr = document.getElementById('nav-right');
+  if (currentUser) {
+    const av = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
+    nr.innerHTML = `
+      <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
+      <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">${av}</a>`;
+    document.getElementById('comment-form').style.display = 'block';
+  } else {
+    nr.innerHTML = `
+      <a href="accedi.html" class="btn btn-ghost">Accedi</a>
+      <a href="accedi.html" class="btn btn-primary">Registrati</a>`;
+  }
+  
+  // Get review ID
+  const reviewId = sessionStorage.getItem('hm_review');
+  if (!reviewId) {
+    showToast('Recensione non trovata');
+    setTimeout(() => window.location.href = 'home.html', 1500);
+    return;
+  }
+  
+  await loadReview(reviewId);
+  await loadComments(reviewId);
+})();
+
+async function loadComments(reviewId) {
+  try {
+    const { comments } = await Comments.list(reviewId);
+    allComments = comments;
+    renderComments(comments);
+  } catch (err) {
+    console.error('Errore caricamento commenti:', err);
+  }
+}
+
+function renderComments(comments) {
+  const list = document.getElementById('comments-list');
+  const countEl = document.getElementById('comments-count');
+  countEl.textContent = comments.length
+    ? `${comments.length} commento${comments.length !== 1 ? 'i' : ''}`
+    : '0 commenti';
+
+  if (!comments.length) {
+    list.innerHTML = '<div class="no-comments">Nessun commento ancora. Sii il primo!</div>';
+    return;
+  }
+
+  list.innerHTML = comments.map(c => {
+    const av = (c.display_name || c.username || '?')[0].toUpperCase();
+    const avatarHtml = c.avatar_url
+      ? `<img src="${escapeHtml(c.avatar_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${av}'">`
+      : av;
+    return `
+      <div class="comment-item">
+        <div class="avatar" style="width:36px;height:36px;font-size:.82rem;flex-shrink:0;">${avatarHtml}</div>
+        <div class="comment-body">
+          <div class="comment-meta">
+            <a class="comment-author" href="profilo.html?id=${c.user_id}">${escapeHtml(c.display_name || c.username)}</a>
+            <span class="comment-date">${formatRelativeDate(c.created_at)}</span>
+          </div>
+          <p class="comment-text">${escapeHtml(c.body)}</p>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function loadReview(reviewId) {
+  try {
+    reviewData = await Reviews.get(reviewId);
+
+    if (!reviewData) {
+      showToast('Recensione non trovata');
+      setTimeout(() => window.location.href = 'home.html', 1500);
+      return;
+    }
+
+    renderReview(reviewData);
+    authorId = reviewData.user_id;
+
+    // Load author profile (follower count + check following)
+    try {
+      const profile = await Users.get(authorId);
+      document.getElementById('author-meta').textContent =
+        `${profile.followers_count ?? 0} seguaci · ${profile.reviews_count ?? 0} recensioni`;
+
+      if (currentUser && currentUser.id !== authorId) {
+        isFollowing = profile.is_following || false;
+        updateFollowButton();
+      } else if (currentUser && currentUser.id === authorId) {
+        document.getElementById('follow-btn').style.display = 'none';
+      }
+    } catch {}
+
+    // Load more reviews by same author
+    try {
+      const { reviews: moreReviews } = await Feed.get({ userId: authorId });
+      const others = moreReviews.filter(r => r.review_id !== reviewData.review_id).slice(0, 5);
+      const container = document.getElementById('more-reviews');
+      if (others.length === 0) {
+        container.innerHTML = '<p style="font-size:.85rem;color:var(--text-dim)">Nessuna altra recensione</p>';
+      } else {
+        container.innerHTML = others.map(r => `
+          <div class="more-item" onclick="goToReview(${r.review_id})">
+            <div class="more-cover">
+              ${r.cover_url ? `<img src="${r.cover_url}" alt="">` : '🎵'}
+            </div>
+            <div class="more-info">
+              <div class="more-title">${escapeHtml(r.album_title)}</div>
+              <div class="more-artist">${escapeHtml(r.artist)}</div>
+            </div>
+          </div>`).join('');
+      }
+    } catch {}
+
+  } catch (err) {
+    showToast('Errore: ' + err.message);
+  }
+}
+
+function goToReview(id) {
+  sessionStorage.setItem('hm_review', id);
+  window.location.reload();
+}
+
+function goToAuthorProfile() {
+  if (authorId) window.location.href = 'profilo.html?id=' + authorId;
+}
+
+function renderReview(r) {
+  // Cover
+  const cover = document.getElementById('rf-cover');
+  cover.innerHTML = r.cover_url 
+    ? `<img src="${r.cover_url}" alt="">` 
+    : '🎵';
+  
+  // Album info
+  document.getElementById('rf-title').textContent = r.album_title;
+  document.getElementById('rf-artist').textContent = r.artist;
+  document.getElementById('rf-genre').textContent = r.genre || 'Music';
+  
+  // Stars
+  document.getElementById('rf-stars').innerHTML = 
+    Array.from({length:5}, (_,i) => `<span class="star${i < r.rating ? ' on' : ''}">★</span>`).join('');
+  
+  // Body
+  document.getElementById('rf-text').textContent = r.body;
+  
+  // Tracks
+  const tracks = Array.isArray(r.fav_tracks_json) ? r.fav_tracks_json : [];
+  if (tracks.length > 0) {
+    document.getElementById('rf-tracks-section').style.display = 'block';
+    document.getElementById('rf-tracks').innerHTML = 
+      tracks.map(t => `<span class="track-pill">♪ ${escapeHtml(t)}</span>`).join('');
+  }
+  
+  // User
+  const av = (r.display_name || r.username || '?')[0].toUpperCase();
+  document.getElementById('rf-avatar').textContent = av;
+  const nameEl = document.getElementById('rf-username');
+  nameEl.innerHTML = `<a href="profilo.html?id=${r.user_id}" style="cursor:pointer;transition:color .2s" onmouseover="this.style.color='var(--honey)'" onmouseout="this.style.color=''">${escapeHtml(r.display_name || r.username)}</a>`;
+  document.getElementById('rf-date').textContent = formatDate(r.created_at);
+  
+  // Likes
+  document.getElementById('likes-count').textContent = r.likes_count;
+  document.getElementById('dislikes-count').textContent = r.dislikes_count;
+
+  // Author sidebar — nome cliccabile
+  document.getElementById('author-avatar').textContent = av;
+  const authorNameEl = document.getElementById('author-name');
+  authorNameEl.innerHTML = `<a href="profilo.html?id=${r.user_id}" style="color:inherit;text-decoration:none;cursor:pointer" onmouseover="this.style.color='var(--honey)'" onmouseout="this.style.color=''">${escapeHtml(r.display_name || r.username)}</a>`;
+
+  // Pulsante elimina visibile solo all'autore
+  if (currentUser && currentUser.id === r.user_id) {
+    document.getElementById('delete-btn').style.display = 'inline-flex';
+  }
+
+  // Update page title
+  document.title = `${r.album_title} — Hive Music`;
+}
+
+async function deleteThisReview() {
+  if (!reviewData) return;
+  if (!confirm('Vuoi davvero eliminare questa recensione? L\'operazione è irreversibile.')) return;
+  const btn = document.getElementById('delete-btn');
+  btn.disabled = true; btn.textContent = 'Elimino…';
+  try {
+    await Reviews.delete(reviewData.review_id);
+    showToast('Recensione eliminata');
+    setTimeout(() => { window.location.href = 'profilo.html'; }, 900);
+  } catch (err) {
+    showToast('Errore: ' + err.message);
+    btn.disabled = false; btn.textContent = '🗑 Elimina';
+  }
+}
+
+function updateFollowButton() {
+  const btn = document.getElementById('follow-btn');
+  btn.classList.toggle('following', isFollowing);
+  btn.textContent = isFollowing ? '✓ Seguito' : 'Segui';
+}
+
+async function toggleFollow() {
+  if (!currentUser) {
+    showToast('Accedi per seguire');
+    return;
+  }
+  
+  const btn = document.getElementById('follow-btn');
+  btn.disabled = true;
+  
+  try {
+    const { following } = await Users.toggleFollow(authorId, !isFollowing);
+    isFollowing = following;
+    updateFollowButton();
+    showToast(isFollowing ? 'Ora segui questo utente!' : 'Non segui più questo utente');
+  } catch (err) {
+    showToast('Errore: ' + err.message);
+  }
+  
+  btn.disabled = false;
+}
+
+async function likeReview(value) {
+  if (!currentUser) {
+    showToast('Accedi per votare');
+    return;
+  }
+  
+  const likeBtn = document.getElementById('like-btn');
+  const dislikeBtn = document.getElementById('dislike-btn');
+  
+  // Toggle logic
+  let newValue = value;
+  if (value === 1 && likeBtn.classList.contains('liked')) newValue = 0;
+  if (value === -1 && dislikeBtn.classList.contains('liked')) newValue = 0;
+  
+  try {
+    const { likes_count, dislikes_count } = await Reviews.like(reviewData.review_id, newValue);
+    
+    document.getElementById('likes-count').textContent = likes_count;
+    document.getElementById('dislikes-count').textContent = dislikes_count;
+    
+    likeBtn.classList.toggle('liked', newValue === 1);
+    dislikeBtn.classList.toggle('liked', newValue === -1);
+  } catch (err) {
+    showToast('Errore: ' + err.message);
+  }
+}
+
+async function postComment() {
+  if (!currentUser) {
+    showToast('Accedi per commentare');
+    return;
+  }
+  if (!reviewData) { showToast('Recensione non ancora caricata'); return; }
+
+  const input = document.getElementById('comment-input');
+  const text  = input.value.trim();
+  if (!text) { showToast('Scrivi qualcosa'); return; }
+
+  const btn = document.querySelector('#comment-form .btn-primary');
+  btn.disabled = true; btn.textContent = '…';
+
+  try {
+    const newComment = await ApiClient.post('comment_create', { review_id: reviewData.review_id, body: text });
+    const comment = newComment.comment;
+    input.value = '';
+    allComments.push(comment);
+    renderComments(allComments);
+    // scroll to bottom of list
+    const list = document.getElementById('comments-list');
+    list.scrollTop = list.scrollHeight;
+    showToast('Commento pubblicato!');
+  } catch (err) {
+    showToast('Errore: ' + err.message);
+  }
+
+  btn.disabled = false; btn.textContent = 'Invia';
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('it-IT', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

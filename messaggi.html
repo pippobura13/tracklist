@@ -32,12 +32,14 @@ body { overflow: hidden; }
 }
 .sidebar-title { font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 700; }
 .new-msg-btn {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: rgba(245,166,35,.10); border: 1px solid rgba(245,166,35,.22);
-  color: var(--honey); font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
-  transition: all var(--trans);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px;
+  background: linear-gradient(145deg, var(--honey-dk), var(--honey));
+  color: var(--hive-950); font-size: .78rem; font-weight: 700;
+  border: none; box-shadow: var(--shadow-honey);
+  transition: all var(--trans); cursor: pointer;
 }
-.new-msg-btn:hover { background: rgba(245,166,35,.18); }
+.new-msg-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(245,166,35,.35); }
 
 .search-box { position: relative; }
 .search-box input {
@@ -205,18 +207,21 @@ body { overflow: hidden; }
     <li><a href="seguiti.html">👥 Seguiti</a></li>
     <li><a href="messaggi.html" class="active">💬 Messaggi</a></li>
   </ul>
-  <div class="nav-right">
-    <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
-    <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">M</a>
-  </div>
+  <div class="nav-right" id="nav-right"></div>
 </nav>
 
 <div class="messages-layout">
   <aside class="msg-sidebar">
     <div class="sidebar-top">
-      <div class="sidebar-top-row">
-        <span class="sidebar-title">Messaggi</span>
-        <button class="new-msg-btn" title="Nuovo messaggio">✏</button>
+      <div class="sidebar-top-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;">
+        <span class="sidebar-title" style="font-family:'Fraunces',serif;font-size:1.15rem;font-weight:700;color:var(--text);">Messaggi</span>
+        <button class="new-msg-btn" title="Nuovo messaggio" onclick="openNewMsgModal()"
+          style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;
+            background:linear-gradient(145deg,var(--honey-dk,#d88b10),var(--honey,#f5a623));
+            color:var(--hive-950,#1a1510);font-size:.78rem;font-weight:700;border:none;
+            cursor:pointer;box-shadow:0 4px 14px rgba(245,166,35,.25);">
+          <span>✏</span><span>Nuovo</span>
+        </button>
       </div>
       <div class="search-box">
         <span class="search-icon">🔍</span>
@@ -231,6 +236,10 @@ body { overflow: hidden; }
       <div class="no-chat-icon">🐝</div>
       <h2>I tuoi messaggi</h2>
       <p>Seleziona una conversazione per iniziare a chattare con i tuoi seguiti.</p>
+      <button class="btn btn-gold" style="margin-top:14px;padding:12px 26px;"
+        onclick="if(typeof openNewMsgModal==='function'){openNewMsgModal()}else{document.getElementById('new-msg-modal').style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:1;visibility:visible;';document.getElementById('new-msg-inner').style.transform='translateY(0)';}">
+        ✏ Inizia una nuova chat
+      </button>
     </div>
     <div id="chat-main" style="display:none;flex-direction:column;height:100%;overflow:hidden;flex:1;">
       <div class="chat-header" id="chat-header"></div>
@@ -251,10 +260,39 @@ body { overflow: hidden; }
   </div>
 </div>
 
+<!-- New Message Modal -->
+<div class="modal-overlay" id="new-msg-modal" onclick="if(event.target===this)closeNewMsgModal()" style="
+  position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);
+  z-index:2000;display:flex;align-items:center;justify-content:center;
+  opacity:0;visibility:hidden;transition:all .25s ease;">
+  <div style="background:var(--hive-800);border:1px solid var(--border-honey);border-radius:var(--radius);
+    padding:28px;width:100%;max-width:420px;box-shadow:var(--shadow-md);
+    transform:translateY(20px);transition:transform .25s ease;" id="new-msg-inner">
+    <div style="font-family:'Fraunces',serif;font-size:1.15rem;font-weight:700;margin-bottom:18px;">✏ Nuovo messaggio</div>
+    <div style="position:relative;margin-bottom:14px;">
+      <input id="new-msg-search" class="form-input" type="text" placeholder="Cerca utente per nome o @username…"
+        oninput="onNewMsgSearch(this.value)" style="padding-left:36px;" />
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:.8rem;pointer-events:none;">🔍</span>
+    </div>
+    <div id="new-msg-list" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+    <button class="btn btn-ghost" onclick="closeNewMsgModal()" style="width:100%;margin-top:16px;">Annulla</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
-<script src="api.js"></script>
+<script src="api.js?v=5"></script>
 <script>
+// Global error handler per diagnostica
+window.addEventListener('error', (e) => {
+  console.error('Script error:', e.message, 'at', e.filename + ':' + e.lineno);
+  const t = document.getElementById('toast');
+  if (t) { t.textContent = 'Errore JS: ' + e.message; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 5000); }
+});
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Promise rejection:', e.reason);
+});
+
 const WS_ENABLED = false;
 const WS_URL = 'wss://tuo-dominio.it/ws';
 
@@ -264,12 +302,69 @@ let currentUser = null;
 let pollTimer = null;
 let ws = null;
 
-(async function init() {
-  if (!Auth.isLoggedIn()) { window.location.href = 'accedi.html'; return; }
-  try { currentUser = await Auth.me(); } catch { Auth.logout(); return; }
-  await loadConversations();
-  if (WS_ENABLED) initWebSocket(); else startPolling();
-})();
+// ═══ Mostra subito lo stato vuoto, così la UI non appare bloccata ═══
+function showInitialEmptyState() {
+  const container = document.getElementById('convo-list');
+  if (container && !container.innerHTML.trim()) {
+    container.innerHTML = `
+      <div style="padding:24px 20px;text-align:center;">
+        <div style="font-size:2.2rem;margin-bottom:10px;">💬</div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:14px;line-height:1.5;">
+          Caricamento conversazioni…
+        </p>
+        <button class="btn btn-gold" style="padding:10px 20px;font-size:.85rem;" onclick="openNewMsgModal()">
+          ✏ Nuovo messaggio
+        </button>
+      </div>`;
+  }
+}
+// Esegui subito appena il DOM è pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', showInitialEmptyState);
+} else {
+  showInitialEmptyState();
+}
+
+async function init() {
+  try {
+    if (!Auth.isLoggedIn()) { window.location.href = 'accedi.html'; return; }
+    try {
+      currentUser = await Auth.me();
+    } catch (err) {
+      console.error('Auth.me() failed:', err);
+      Auth.logout(); return;
+    }
+    const av = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
+    const navRight = document.getElementById('nav-right');
+    if (navRight) {
+      navRight.innerHTML = `
+        <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
+        <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">${av}</a>`;
+    }
+    // Auto-open conversation if ?user=ID in URL — FAI QUESTO SUBITO,
+    // prima ancora di loadConversations, così la chat si apre anche se quell'endpoint è lento o fallisce
+    const params = new URLSearchParams(window.location.search);
+    const targetUserId = params.get('user') ? parseInt(params.get('user')) : null;
+    console.log('[messaggi] targetUserId from URL:', targetUserId);
+
+    await loadConversations();
+    if (WS_ENABLED) initWebSocket(); else startPolling();
+
+    if (targetUserId && !isNaN(targetUserId) && targetUserId > 0) {
+      console.log('[messaggi] Apertura chat con utente', targetUserId);
+      await openChat(targetUserId);
+    }
+  } catch (err) {
+    console.error('init() error:', err);
+    showToast('Errore di inizializzazione: ' + err.message);
+  }
+}
+// Avvia init dopo che il DOM è pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 async function loadConversations() {
   try {
@@ -282,7 +377,21 @@ async function loadConversations() {
 }
 
 function renderConvoList(list) {
-  document.getElementById('convo-list').innerHTML = list.map(c => {
+  const container = document.getElementById('convo-list');
+  if (!list.length) {
+    container.innerHTML = `
+      <div style="padding:24px 20px;text-align:center;">
+        <div style="font-size:2.2rem;margin-bottom:10px;">💬</div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:14px;line-height:1.5;">
+          Non hai ancora conversazioni.<br>Inizia a chattare con i tuoi seguiti!
+        </p>
+        <button class="btn btn-gold" style="padding:10px 20px;font-size:.85rem;" onclick="openNewMsgModal()">
+          ✏ Nuovo messaggio
+        </button>
+      </div>`;
+    return;
+  }
+  container.innerHTML = list.map(c => {
     const u = c.user;
     const av = (u.display_name || u.username || '?')[0].toUpperCase();
     return `<div class="convo-item${activeContact === u.id ? ' active' : ''}" onclick="openChat(${u.id})">
@@ -291,22 +400,29 @@ function renderConvoList(list) {
         ${u.online ? '<div class="online-dot"></div>' : ''}
       </div>
       <div class="convo-info">
-        <div class="convo-name">${u.display_name || u.username}</div>
-        <div class="convo-preview">${c.last_message?.body || ''}</div>
+        <a class="convo-name" href="profilo.html?id=${u.id}"
+          onclick="event.stopPropagation()"
+          style="color:inherit;text-decoration:none;cursor:pointer;transition:color .15s"
+          onmouseover="this.style.color='var(--honey)'"
+          onmouseout="this.style.color=''">${escapeHtml(u.display_name || u.username)}</a>
+        <div class="convo-preview">${escapeHtml(c.last_message?.body || '')}</div>
       </div>
       <div class="convo-meta">
         <span class="convo-time">${formatDate(c.last_message?.created_at)}</span>
         ${c.unread_count ? `<span class="unread-badge">${c.unread_count}</span>` : ''}
       </div>
     </div>`;
-  }).join('') || '<p style="padding:18px 20px;color:var(--text-dim);font-size:.82rem">Nessuna conversazione</p>';
+  }).join('');
 }
 
 async function openChat(userId) {
   activeContact = userId;
   renderConvoList(conversations);
   const c = conversations.find(x => x.user.id === userId);
-  const u = c?.user || { id: userId, username: '…', display_name: '', online: false };
+  let u = c?.user;
+  if (!u) {
+    try { u = await Users.get(userId); } catch { u = { id: userId, username: '…', display_name: '', online: false }; }
+  }
   document.getElementById('no-chat').style.display = 'none';
   const cm = document.getElementById('chat-main');
   cm.style.display = 'flex'; cm.style.flexDirection = 'column';
@@ -454,6 +570,104 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 window.addEventListener('beforeunload', () => { if (pollTimer) clearInterval(pollTimer); if (ws) ws.close(); });
+
+// ── New Message Modal ────────────────────────────────────────
+let _newMsgSearchTimer = null;
+
+window.openNewMsgModal = function() {
+  const modal = document.getElementById('new-msg-modal');
+  const inner = document.getElementById('new-msg-inner');
+  if (!modal || !inner) { console.error('Modal elements not found'); return; }
+  const searchInput = document.getElementById('new-msg-search');
+  if (searchInput) searchInput.value = '';
+  modal.style.opacity = '1';
+  modal.style.visibility = 'visible';
+  modal.style.display = 'flex';
+  inner.style.transform = 'translateY(0)';
+  loadDefaultNewMsgUsers();
+  setTimeout(() => { if (searchInput) searchInput.focus(); }, 100);
+};
+
+window.closeNewMsgModal = function() {
+  const modal = document.getElementById('new-msg-modal');
+  const inner = document.getElementById('new-msg-inner');
+  if (!modal || !inner) return;
+  modal.style.opacity = '0';
+  modal.style.visibility = 'hidden';
+  inner.style.transform = 'translateY(20px)';
+};
+
+async function loadDefaultNewMsgUsers() {
+  const list = document.getElementById('new-msg-list');
+  if (!list) return;
+  list.innerHTML = '<p style="font-size:.82rem;color:var(--text-dim);padding:8px 4px">Caricamento…</p>';
+  try {
+    const [followRes, suggestRes] = await Promise.all([
+      (typeof Users !== 'undefined' ? Users.following() : Promise.resolve({ users: [] })).catch(() => ({ users: [] })),
+      (typeof Users !== 'undefined' ? Users.suggestions() : Promise.resolve({ users: [] })).catch(() => ({ users: [] }))
+    ]);
+    const seen = new Set();
+    const merged = [...(followRes.users || []), ...(suggestRes.users || [])].filter(u => {
+      if (seen.has(u.id)) return false;
+      seen.add(u.id); return true;
+    });
+    renderNewMsgList(merged, merged.length ? '' : 'Nessun utente suggerito. Digita per cercare.');
+  } catch (err) {
+    console.error('loadDefaultNewMsgUsers error:', err);
+    list.innerHTML = '<p style="font-size:.82rem;color:var(--coral);padding:8px 4px">Errore nel caricamento</p>';
+  }
+}
+
+window.onNewMsgSearch = function(value) {
+  clearTimeout(_newMsgSearchTimer);
+  const list = document.getElementById('new-msg-list');
+  if (!list) return;
+  if (!value || value.length < 2) { loadDefaultNewMsgUsers(); return; }
+  list.innerHTML = '<p style="font-size:.82rem;color:var(--text-dim);padding:8px 4px">Ricerca…</p>';
+  _newMsgSearchTimer = setTimeout(async () => {
+    try {
+      const { users } = await Users.search(value);
+      renderNewMsgList(users, 'Nessun utente trovato per "' + value + '"');
+    } catch (err) {
+      console.error('search error:', err);
+      list.innerHTML = '<p style="font-size:.82rem;color:var(--coral);padding:8px 4px">Errore nella ricerca</p>';
+    }
+  }, 350);
+};
+
+function renderNewMsgList(users, emptyMsg = 'Nessun utente trovato') {
+  const list = document.getElementById('new-msg-list');
+  if (!list) return;
+  if (!users || !users.length) {
+    list.innerHTML = `<p style="font-size:.82rem;color:var(--text-dim);padding:8px 4px">${emptyMsg}</p>`;
+    return;
+  }
+  list.innerHTML = users.map(u => {
+    const av = (u.display_name || u.username || '?')[0].toUpperCase();
+    return `<div onclick="startConvoWith(${u.id})" style="
+      display:flex;align-items:center;gap:12px;padding:10px 12px;
+      border-radius:var(--radius-sm);cursor:pointer;transition:background .15s;"
+      onmouseover="this.style.background='rgba(245,166,35,.07)'"
+      onmouseout="this.style.background='transparent'">
+      <div class="avatar" style="width:38px;height:38px;font-size:.85rem;flex-shrink:0;">${av}</div>
+      <div style="min-width:0">
+        <div style="font-size:.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(u.display_name || u.username)}</div>
+        <div style="font-size:.72rem;color:var(--text-dim);">@${escapeHtml(u.username)} · ${u.reviews_count ?? 0} recensioni</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.startConvoWith = async function(userId) {
+  closeNewMsgModal();
+  await openChat(userId);
+};
+
+// Esponi anche le altre funzioni chiamate da onclick
+window.openChat = openChat;
+window.sendMsg = sendMsg;
+window.shareAlbum = shareAlbum;
+window.searchConvos = searchConvos;
 </script>
 </body>
 </html>
