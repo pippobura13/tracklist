@@ -2,45 +2,6 @@
 
 Una WebApp social dove gli utenti possono recensire album da Spotify, seguirsi a vicenda e scambiarsi messaggi.
 
-## 📋 Requisiti
-
-- **PHP** 7.4+ con estensioni: `pdo_mysql`, `curl`, `json`
-- **MySQL/MariaDB** 5.7+
-- **XAMPP** o altro server locale (Apache + MySQL)
-- Connessione internet (per Spotify API)
-
-## 🚀 Installazione
-
-### 1. Setup Database
-
-```bash
-# Accedi a MySQL
-mysql -u root -p
-
-# Esegui lo schema
-source /percorso/a/schema.sql
-```
-
-O importa `schema.sql` tramite phpMyAdmin.
-
-### 2. Configura il Progetto
-
-1. Copia tutti i file nella cartella `htdocs` di XAMPP (es. `C:\xampp\htdocs\hivemusic\`)
-
-2. Modifica `config.php` se necessario:
-```php
-// Credenziali database (default per XAMPP)
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'hivemusic');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-```
-
-### 3. Avvia i Servizi
-
-1. Avvia Apache e MySQL da XAMPP Control Panel
-2. Visita: `http://localhost/hivemusic/home.html`
-
 ## 📁 Struttura File
 
 ```
@@ -98,18 +59,6 @@ Authorization: Bearer <token>
 
 Il token è salvato in `localStorage` come `hm_token`.
 
-## 🎵 Integrazione Spotify
-
-Le credenziali Spotify sono già configurate in `config.php` e `api.js`:
-
-```javascript
-// Frontend (api.js)
-const SPOTIFY_CLIENT_ID = 'd3859dddd2e44b88a30790a1c1f404dd';
-const SPOTIFY_CLIENT_SECRET = 'd3455ddc48414cdebed233dab5684a32';
-```
-
-Usa il **Client Credentials Flow** per cercare album senza login Spotify dell'utente.
-
 ## ⏱️ Polling
 
 Il sistema usa JavaScript Polling per aggiornamenti in tempo reale:
@@ -129,28 +78,6 @@ Palette colori "Honeycomb/Amber":
 | `--coral` | #FF6B6B | Errori |
 | `--hive-900` | #1a1510 | Background |
 | `--text` | #F5F0E8 | Testo primario |
-
-## 📱 Responsive
-
-Il design è mobile-first con breakpoint principale a 860px.
-
-## 🧪 Testing
-
-1. **Registra** un nuovo utente
-2. **Cerca** un album su Spotify in "Nuova Recensione"
-3. **Pubblica** una recensione
-4. **Segui** altri utenti dalla sezione "Seguiti"
-5. **Invia** un messaggio a chi segui
-
-## ⚠️ Note Importanti
-
-- **Progetto didattico**: Le credenziali Spotify sono esposte nel codice (non fare in produzione!)
-- **Sicurezza**: In produzione, usa HTTPS, valida meglio gli input, nascondi le credenziali
-- **Database**: Lo schema include vincoli FK e indici per performance
-
-## 📄 Licenza
-
-Progetto a scopo didattico.
 
 ---
 
