@@ -977,27 +977,40 @@ switch ($action) {
     case 'messages':
         $user = requireAuth();
         $otherId = (int)($_GET['userId'] ?? 0);
-        
+
         if (!$otherId) errorResponse('User ID mancante');
-        
+
         $pdo = getDB();
-        
-        $stmt = $pdo->prepare("
-            SELECT id, sender_id, receiver_id, body, read_at, created_at
-            FROM messages
-            WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-            ORDER BY created_at ASC
-            LIMIT ?
-        ");
-        $stmt->execute([$user['id'], $otherId, $otherId, $user['id'], MESSAGES_PER_PAGE]);
+        $since = $_GET['since'] ?? null;
+
+        if ($since) {
+            $stmt = $pdo->prepare("
+                SELECT id, sender_id, receiver_id, body, read_at, created_at
+                FROM messages
+                WHERE ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?))
+                  AND created_at > ?
+                ORDER BY created_at ASC
+            ");
+            $stmt->execute([$user['id'], $otherId, $otherId, $user['id'], $since]);
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT id, sender_id, receiver_id, body, read_at, created_at
+                FROM messages
+                WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+                ORDER BY created_at ASC
+                LIMIT ?
+            ");
+            $stmt->execute([$user['id'], $otherId, $otherId, $user['id'], MESSAGES_PER_PAGE]);
+        }
+
         $messages = $stmt->fetchAll();
-        
+
         foreach ($messages as &$msg) {
             $msg['id'] = (int)$msg['id'];
             $msg['sender_id'] = (int)$msg['sender_id'];
             $msg['receiver_id'] = (int)$msg['receiver_id'];
         }
-        
+
         jsonResponse(['success' => true, 'messages' => $messages]);
         break;
     

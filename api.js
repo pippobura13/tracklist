@@ -506,10 +506,13 @@ const Messages = {
     },
     
     /**
-     * Lista messaggi con un utente
+     * Lista messaggi con un utente.
+     * Se `since` è un ISO timestamp, restituisce solo i messaggi più recenti.
      */
-    async list(userId) {
-        const data = await ApiClient.get('messages', { userId });
+    async list(userId, since = null) {
+        const params = { userId };
+        if (since) params.since = since;
+        const data = await ApiClient.get('messages', params);
         return { messages: data.messages || [] };
     },
     

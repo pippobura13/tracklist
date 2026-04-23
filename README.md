@@ -78,7 +78,3 @@ Palette colori "Honeycomb/Amber":
 | `--coral` | #FF6B6B | Errori |
 | `--hive-900` | #1a1510 | Background |
 | `--text` | #F5F0E8 | Testo primario |
-
----
-
-Creato con 🐝 per il progetto capstone ITTS.
