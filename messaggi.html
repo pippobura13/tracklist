@@ -103,9 +103,16 @@ body { overflow: hidden; }
 }
 .msg-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 2px; }
 .msg-row.me { flex-direction: row-reverse; }
+.msg-group {
+  display: flex; flex-direction: column;
+  max-width: min(65%, 520px); min-width: 0;
+}
+.msg-row.me       .msg-group { align-items: flex-end; }
+.msg-row:not(.me) .msg-group { align-items: flex-start; }
 .msg-bubble {
-  max-width: 65%; min-width: 60px; width: fit-content; padding: 10px 14px;
-  font-size: .875rem; line-height: 1.5; word-break: break-word; white-space: pre-wrap;
+  max-width: 100%; width: fit-content; padding: 10px 14px;
+  font-size: .875rem; line-height: 1.5;
+  overflow-wrap: anywhere; word-break: break-word; white-space: pre-wrap;
 }
 .msg-row:not(.me) .msg-bubble {
   background: rgba(255,255,255,.05); border: 1px solid var(--border);
@@ -116,7 +123,10 @@ body { overflow: hidden; }
   color: var(--hive-950); font-weight: 500;
   border-radius: 18px 18px 4px 18px;
 }
-.msg-meta { font-size: .63rem; color: var(--text-dim); padding-bottom: 2px; white-space: nowrap; }
+.msg-meta {
+  font-size: .63rem; color: var(--text-dim); padding-bottom: 2px;
+  white-space: nowrap; margin-top: 2px;
+}
 
 .chat-input-area {
   padding: 12px 16px; border-top: 1px solid var(--border);
@@ -219,7 +229,7 @@ body { overflow: hidden; }
 
 <div id="toast"></div>
 
-<script src="api.js?v=6"></script>
+<script src="api.js?v=8"></script>
 <script>
 'use strict';
 
@@ -244,11 +254,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   catch { Auth.logout(); return; }
 
   /* navbar */
-  const av = (me.display_name || me.username || '?')[0].toUpperCase();
   document.getElementById('nav-right').innerHTML = `
     <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
     <a href="profilo.html" class="avatar"
-       style="width:36px;height:36px;font-size:.85rem;text-decoration:none">${av}</a>`;
+       style="width:36px;height:36px;font-size:.85rem;text-decoration:none;overflow:hidden;">${avatarInner(me)}</a>`;
 
   /* carica contatti e avvia polling */
   await loadContacts();
@@ -325,7 +334,6 @@ function renderSidebar(list) {
 
   el.innerHTML = list.map(c => {
     const u       = c.user;
-    const av      = (u.display_name || u.username || '?')[0].toUpperCase();
     const preview = c.last_message
       ? esc(c.last_message.body)
       : '<i style="color:#6b6358">Inizia la conversazione</i>';
@@ -335,10 +343,14 @@ function renderSidebar(list) {
       <div class="convo-item${activeId === u.id ? ' active' : ''}"
            onclick="openChat(${u.id})">
         <div class="convo-av">
-          <div class="avatar" style="width:44px;height:44px;font-size:.95rem">${av}</div>
+          <a href="profilo.html?id=${u.id}" onclick="event.stopPropagation()"
+             class="avatar"
+             style="width:44px;height:44px;font-size:.95rem;overflow:hidden;text-decoration:none;">${avatarInner(u)}</a>
         </div>
         <div class="convo-info">
-          <div class="convo-name">${esc(u.display_name || u.username)}</div>
+          <a class="convo-name" href="profilo.html?id=${u.id}"
+             onclick="event.stopPropagation()"
+             style="text-decoration:none;color:inherit;">${esc(u.display_name || u.username)}</a>
           <div class="convo-preview">${preview}</div>
         </div>
         <div class="convo-meta">
@@ -404,7 +416,6 @@ async function openChat(userId) {
   if (!searchQuery) renderSidebar(contacts);
 
   const u  = entry.user;
-  const av = (u.display_name || u.username || '?')[0].toUpperCase();
 
   /* mostra area chat */
   document.getElementById('no-chat').style.display  = 'none';
@@ -416,9 +427,11 @@ async function openChat(userId) {
 
   /* header */
   document.getElementById('chat-header').innerHTML = `
-    <div class="avatar" style="width:42px;height:42px;font-size:.95rem">${av}</div>
+    <a href="profilo.html?id=${u.id}" class="avatar"
+       style="width:42px;height:42px;font-size:.95rem;overflow:hidden;text-decoration:none;">${avatarInner(u)}</a>
     <div class="chat-header-info">
-      <div class="chat-header-name">${esc(u.display_name || u.username)}</div>
+      <a href="profilo.html?id=${u.id}" class="chat-header-name"
+         style="text-decoration:none;color:inherit;">${esc(u.display_name || u.username)}</a>
       <div class="chat-header-sub">@${esc(u.username || '')}</div>
     </div>
     <button class="chat-action" onclick="location.href='profilo.html?id=${u.id}'"
@@ -481,24 +494,23 @@ function buildMsgHTML(m) {
   }
 
   /* avatar mittente (solo messaggi ricevuti) */
-  const sender = contacts.find(c => c.user.id === m.sender_id);
-  const av     = (sender?.user?.display_name || sender?.user?.username || '?')[0].toUpperCase();
+  const sender  = contacts.find(c => c.user.id === m.sender_id);
+  const senderU = sender ? sender.user : { username: '?', display_name: '?' };
 
   if (isMe) {
     out += `
       <div class="msg-row me">
-        <div>
+        <div class="msg-group">
           <div class="msg-bubble">${esc(m.body)}</div>
-          <div class="msg-meta" style="text-align:right">
-            ${fmtTime(m.created_at)}${m.read_at ? ' ✓✓' : ''}
-          </div>
+          <div class="msg-meta">${fmtTime(m.created_at)}${m.read_at ? ' ✓✓' : ''}</div>
         </div>
       </div>`;
   } else {
     out += `
       <div class="msg-row">
-        <div class="avatar" style="width:28px;height:28px;font-size:.7rem;flex-shrink:0">${av}</div>
-        <div>
+        <a href="profilo.html?id=${m.sender_id}" class="avatar"
+           style="width:28px;height:28px;font-size:.7rem;flex-shrink:0;overflow:hidden;text-decoration:none;">${avatarInner(senderU)}</a>
+        <div class="msg-group">
           <div class="msg-bubble">${esc(m.body)}</div>
           <div class="msg-meta">${fmtTime(m.created_at)}</div>
         </div>
@@ -534,9 +546,9 @@ async function sendMsg() {
   /* bolla ottimistica */
   body.insertAdjacentHTML('beforeend', `
     <div class="msg-row me" id="${tmpId}">
-      <div>
+      <div class="msg-group">
         <div class="msg-bubble">${esc(text)}</div>
-        <div class="msg-meta" style="text-align:right">${fmtTime(now)} ⏳</div>
+        <div class="msg-meta">${fmtTime(now)} ⏳</div>
       </div>
     </div>`);
   body.scrollTop = body.scrollHeight;

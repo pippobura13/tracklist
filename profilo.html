@@ -194,11 +194,14 @@
             📷 Carica foto
             <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="onAvatarFileChange(this)">
           </label>
+          <button type="button" id="avatar-remove-btn" class="btn btn-ghost"
+            style="font-size:.78rem;padding:8px 16px;margin-left:6px;margin-bottom:6px;color:var(--coral);border-color:var(--coral);display:none;"
+            onclick="removeAvatar()">🗑 Rimuovi foto</button>
           <div style="font-size:.72rem;color:var(--text-dim);">JPG, PNG, GIF, WebP · Max 5MB</div>
           <div id="avatar-upload-status" style="font-size:.75rem;margin-top:4px;"></div>
         </div>
       </div>
-      <input class="form-input" id="edit-avatar-url" type="url" placeholder="Oppure incolla un URL immagine…" />
+      <input class="form-input" id="edit-avatar-url" type="url" placeholder="Oppure incolla un URL immagine…" oninput="onAvatarUrlInput(this.value)" />
     </div>
 
     <hr class="modal-divider" />
@@ -232,7 +235,7 @@
 
 <div id="toast"></div>
 
-<script src="api.js?v=5"></script>
+<script src="api.js?v=7"></script>
 <script>
 let currentUser  = null;
 let profileUser  = null;
@@ -253,10 +256,9 @@ let isFollowing  = false;
   // Navbar
   const nr = document.getElementById('nav-right');
   if (currentUser) {
-    const av = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
     nr.innerHTML = `
       <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
-      <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">${av}</a>`;
+      <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;overflow:hidden;">${avatarInner(currentUser)}</a>`;
   } else {
     nr.innerHTML = `
       <a href="accedi.html" class="btn btn-ghost">Accedi</a>
@@ -290,8 +292,14 @@ function renderProfile(u) {
   const avatarEl = document.getElementById('profile-avatar');
   if (u.avatar_url) {
     avatarEl.innerHTML = `<img src="${escapeHtml(u.avatar_url)}" alt="" onerror="this.parentElement.textContent='${(u.display_name||u.username||'?')[0].toUpperCase()}'" />`;
+    avatarEl.style.cursor = 'zoom-in';
+    avatarEl.onclick = () => openAvatarLightbox(u.avatar_url, u.display_name || u.username);
+    avatarEl.title = 'Clicca per ingrandire';
   } else {
     avatarEl.textContent = (u.display_name || u.username || '?')[0].toUpperCase();
+    avatarEl.style.cursor = '';
+    avatarEl.onclick = null;
+    avatarEl.title = '';
   }
 
   document.getElementById('profile-name').textContent    = u.display_name || u.username;
@@ -349,7 +357,6 @@ async function loadReviews(userId) {
 }
 
 function renderReviewCard(r) {
-  const av    = (r.display_name || r.username || '?')[0].toUpperCase();
   const stars = Array.from({length:5}, (_,i) => `<span class="star${i < r.rating ? ' on' : ''}">★</span>`).join('');
   const tracks = (r.fav_tracks_json || []).slice(0, 3)
     .map(t => `<span class="track-pill">♪ ${escapeHtml(t)}</span>`).join('');
@@ -375,7 +382,7 @@ function renderReviewCard(r) {
       </div>
       <div class="rc-footer">
         <div class="rc-user">
-          <div class="avatar" style="width:28px;height:28px;font-size:.7rem;">${av}</div>
+          <div class="avatar" style="width:28px;height:28px;font-size:.7rem;overflow:hidden;">${avatarInner(r)}</div>
           <div>
             <a class="rc-user-name" href="profilo.html?id=${r.user_id}"
               onclick="event.stopPropagation()"
@@ -453,14 +460,27 @@ function openEditModal() {
   document.getElementById('edit-current-password').value = '';
   document.getElementById('edit-new-password').value      = '';
   document.getElementById('avatar-upload-status').textContent = '';
-  const preview = document.getElementById('avatar-preview');
+  refreshAvatarPreview();
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function refreshAvatarPreview() {
+  const preview  = document.getElementById('avatar-preview');
+  const removeBtn = document.getElementById('avatar-remove-btn');
+  const url      = (document.getElementById('edit-avatar-url').value || currentUser.avatar_url || '').trim();
   const initials = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
-  if (currentUser.avatar_url) {
-    preview.innerHTML = `<img src="${escapeHtml(currentUser.avatar_url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${initials}'" />`;
+  if (url) {
+    preview.innerHTML = `<img src="${escapeHtml(url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${initials}'" />`;
+    if (removeBtn) removeBtn.style.display = 'inline-block';
   } else {
     preview.textContent = initials;
+    if (removeBtn) removeBtn.style.display = 'none';
   }
-  document.getElementById('edit-modal').classList.add('open');
+}
+
+function onAvatarUrlInput(value) {
+  // Aggiorna preview in tempo reale mentre si incolla un URL esterno
+  refreshAvatarPreview();
 }
 
 // ── Avatar upload ────────────────────────────────────────────
@@ -469,22 +489,91 @@ async function onAvatarFileChange(input) {
   const file = input.files[0];
   if (!file) return;
   const statusEl = document.getElementById('avatar-upload-status');
-  const preview  = document.getElementById('avatar-preview');
   statusEl.style.color = 'var(--text-muted)';
   statusEl.textContent = 'Caricamento…';
   try {
     const { user, avatar_url } = await Users.uploadAvatar(file);
-    document.getElementById('edit-avatar-url').value = avatar_url;
-    preview.innerHTML = `<img src="${avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;" />`;
+    document.getElementById('edit-avatar-url').value = avatar_url + '?t=' + Date.now();
+    refreshAvatarPreview();
     statusEl.style.color = 'var(--mint)';
     statusEl.textContent = '✓ Foto caricata!';
     Auth.saveSession(localStorage.getItem('hm_token'), user);
     currentUser = user;
+    // Aggiorna anche l'avatar grande in hero se è il proprio profilo
+    if (isOwnProfile && profileUser) {
+      profileUser.avatar_url = user.avatar_url;
+      renderProfile(profileUser);
+    }
   } catch (err) {
     statusEl.style.color = 'var(--coral)';
     statusEl.textContent = 'Errore: ' + err.message;
   }
 }
+
+// ── Avatar remove ────────────────────────────────────────────
+
+async function removeAvatar() {
+  if (!currentUser || !currentUser.avatar_url) {
+    // Anche solo l'URL digitato senza foto salvata: pulisci il campo
+    document.getElementById('edit-avatar-url').value = '';
+    refreshAvatarPreview();
+    return;
+  }
+  if (!confirm('Vuoi davvero rimuovere la tua foto profilo?')) return;
+  const statusEl = document.getElementById('avatar-upload-status');
+  statusEl.style.color = 'var(--text-muted)';
+  statusEl.textContent = 'Rimozione…';
+  try {
+    const user = await Users.deleteAvatar();
+    Auth.saveSession(localStorage.getItem('hm_token'), user);
+    currentUser = user;
+    document.getElementById('edit-avatar-url').value = '';
+    refreshAvatarPreview();
+    statusEl.style.color = 'var(--mint)';
+    statusEl.textContent = '✓ Foto rimossa';
+    // Aggiorna anche l'hero
+    if (isOwnProfile && profileUser) {
+      profileUser.avatar_url = null;
+      renderProfile(profileUser);
+    }
+  } catch (err) {
+    statusEl.style.color = 'var(--coral)';
+    statusEl.textContent = 'Errore: ' + err.message;
+  }
+}
+
+// ── Avatar lightbox (clicca per ingrandire) ──────────────────
+
+function openAvatarLightbox(url, name) {
+  if (!url) return;
+  let lb = document.getElementById('avatar-lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'avatar-lightbox';
+    lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:5000;display:flex;align-items:center;justify-content:center;padding:40px;cursor:zoom-out;opacity:0;transition:opacity .2s;';
+    lb.onclick = closeAvatarLightbox;
+    document.body.appendChild(lb);
+  }
+  lb.innerHTML = `
+    <img src="${escapeHtml(url)}" alt="${escapeHtml(name || '')}"
+      style="max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);object-fit:contain;" />
+    <button onclick="closeAvatarLightbox();event.stopPropagation();"
+      style="position:absolute;top:20px;right:24px;background:rgba(255,255,255,.12);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:1.3rem;cursor:pointer;">×</button>`;
+  requestAnimationFrame(() => { lb.style.opacity = '1'; });
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAvatarLightbox() {
+  const lb = document.getElementById('avatar-lightbox');
+  if (!lb) return;
+  lb.style.opacity = '0';
+  document.body.style.overflow = '';
+  setTimeout(() => lb.remove(), 200);
+}
+window.openAvatarLightbox = openAvatarLightbox;
+window.closeAvatarLightbox = closeAvatarLightbox;
+window.removeAvatar = removeAvatar;
+window.onAvatarUrlInput = onAvatarUrlInput;
 
 // ── Followers / Following modal ───────────────────────────────
 
@@ -510,7 +599,6 @@ async function openFollowModal(type) {
     }
 
     list.innerHTML = users.map(u => {
-      const av = (u.display_name || u.username || '?')[0].toUpperCase();
       const isF = u.is_following || false;
       const followBtn = currentUser && currentUser.id !== u.id
         ? `<button class="follow-btn${isF ? ' following' : ''}" id="fmb-${u.id}" onclick="toggleFollowInModal(${u.id})">${isF ? '✓ Seguito' : 'Segui'}</button>`
@@ -518,7 +606,7 @@ async function openFollowModal(type) {
       return `
         <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
           <a href="profilo.html?id=${u.id}" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;color:inherit;text-decoration:none;">
-            <div class="avatar" style="width:42px;height:42px;font-size:.95rem;flex-shrink:0;">${av}</div>
+            <div class="avatar" style="width:42px;height:42px;font-size:.95rem;flex-shrink:0;overflow:hidden;">${avatarInner(u)}</div>
             <div style="min-width:0;">
               <div style="font-size:.88rem;font-weight:600;">${escapeHtml(u.display_name || u.username)}</div>
               <div style="font-size:.74rem;color:var(--text-dim);">@${escapeHtml(u.username)} · ${u.followers_count} seguaci</div>

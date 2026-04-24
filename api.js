@@ -467,6 +467,14 @@ const Users = {
         formData.append('avatar', file);
         const data = await ApiClient.upload('avatar_upload', formData);
         return { user: data.user, avatar_url: data.avatar_url };
+    },
+
+    /**
+     * Rimuove la foto profilo corrente
+     */
+    async deleteAvatar() {
+        const data = await ApiClient.post('avatar_delete', {});
+        return data.user;
     }
 };
 
@@ -671,6 +679,29 @@ const ChatPolling = {
 // ============================================================
 // UTILITY FUNCTIONS
 // ============================================================
+
+/**
+ * Restituisce il contenuto interno di un <div class="avatar">:
+ * se l'utente ha un avatar_url mostra l'immagine, altrimenti l'iniziale.
+ *
+ * Uso tipico:
+ *   <div class="avatar" style="width:28px;height:28px;overflow:hidden;">
+ *     ${avatarInner(user)}
+ *   </div>
+ *
+ * L'oggetto deve avere almeno `display_name` o `username`, e facoltativamente `avatar_url`.
+ */
+function avatarInner(user) {
+    const name    = (user && (user.display_name || user.username)) || '?';
+    const initial = (name[0] || '?').toUpperCase();
+    const url     = user && user.avatar_url ? String(user.avatar_url) : '';
+    if (!url) return initial;
+    // Escape attributi
+    const safeUrl = url.replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const safeInit = initial.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `<img src="${safeUrl}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;" onerror="this.onerror=null;this.parentElement.textContent='${safeInit}';">`;
+}
+window.avatarInner = avatarInner;
 
 /**
  * Formatta numero con suffisso k/M

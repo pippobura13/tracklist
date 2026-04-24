@@ -1095,14 +1095,15 @@ switch ($action) {
         }
         
         $sql = "
-            SELECT 
+            SELECT
                 r.id AS review_id,
                 r.created_at,
                 a.title AS album_title,
                 a.cover_url,
                 u.id AS user_id,
                 u.username,
-                u.display_name
+                u.display_name,
+                u.avatar_url
             FROM reviews r
             JOIN albums a ON r.album_id = a.id
             JOIN users u ON r.user_id = u.id
@@ -1462,6 +1463,34 @@ switch ($action) {
         $updated['id'] = (int)$updated['id'];
 
         jsonResponse(['success' => true, 'user' => $updated, 'avatar_url' => $avatarUrl]);
+        break;
+
+    // --------------------------------------------------------
+    // AVATAR: Delete own avatar (file + DB field)
+    // --------------------------------------------------------
+    case 'avatar_delete':
+        $user = requireAuth();
+        $pdo  = getDB();
+
+        $stmt = $pdo->prepare('SELECT avatar_url FROM users WHERE id = ?');
+        $stmt->execute([$user['id']]);
+        $old = $stmt->fetch();
+
+        // Rimuovi il file locale solo se è un upload locale (non URL esterno)
+        if ($old && !empty($old['avatar_url']) && strpos($old['avatar_url'], 'uploads/avatars/') === 0) {
+            $oldPath = __DIR__ . '/' . $old['avatar_url'];
+            if (file_exists($oldPath)) @unlink($oldPath);
+        }
+
+        $stmt = $pdo->prepare('UPDATE users SET avatar_url = NULL WHERE id = ?');
+        $stmt->execute([$user['id']]);
+
+        $stmt = $pdo->prepare('SELECT id, username, email, display_name, bio, avatar_url, created_at FROM users WHERE id = ?');
+        $stmt->execute([$user['id']]);
+        $updated = $stmt->fetch();
+        $updated['id'] = (int)$updated['id'];
+
+        jsonResponse(['success' => true, 'user' => $updated]);
         break;
 
     // --------------------------------------------------------

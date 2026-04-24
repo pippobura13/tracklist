@@ -215,7 +215,7 @@
     <li><a href="messaggi.html">💬 Messaggi</a></li>
   </ul>
   <div class="nav-right">
-    <a href="profilo.html" class="avatar" id="nav-avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">?</a>
+    <a href="profilo.html" class="avatar" id="nav-avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;overflow:hidden;">?</a>
   </div>
 </nav>
 
@@ -352,7 +352,7 @@
 
 <div id="toast"></div>
 
-<script src="api.js?v=5"></script>
+<script src="api.js?v=7"></script>
 <script>
 const RATINGS = ['','⭐ Pessimo','⭐⭐ Scarso','⭐⭐⭐ Nella media','⭐⭐⭐⭐ Buono','⭐⭐⭐⭐⭐ Capolavoro'];
 let selectedAlbum = null;
@@ -364,11 +364,12 @@ let _albumResults = [];
 (async function init() {
   if (!Auth.isLoggedIn()) { window.location.href = 'accedi.html'; return; }
   try { currentUser = await Auth.me(); } catch { Auth.logout(); return; }
-  const av  = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
   const name = currentUser.display_name || currentUser.username;
-  document.querySelector('.preview-footer .avatar').textContent = av;
-  document.querySelector('.preview-footer-text').textContent    = name;
-  document.getElementById('nav-avatar').textContent             = av;
+  const pfAv = document.querySelector('.preview-footer .avatar');
+  pfAv.innerHTML = avatarInner(currentUser);
+  pfAv.style.overflow = 'hidden';
+  document.querySelector('.preview-footer-text').textContent = name;
+  document.getElementById('nav-avatar').innerHTML = avatarInner(currentUser);
   updateSteps(1);
 })();
 

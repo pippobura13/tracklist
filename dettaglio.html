@@ -274,7 +274,7 @@
 
 <div id="toast"></div>
 
-<script src="api.js?v=5"></script>
+<script src="api.js?v=7"></script>
 <script>
 let currentUser = null;
 let reviewData = null;
@@ -294,10 +294,9 @@ let allComments = [];
   // Update navbar
   const nr = document.getElementById('nav-right');
   if (currentUser) {
-    const av = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
     nr.innerHTML = `
       <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
-      <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">${av}</a>`;
+      <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;overflow:hidden;">${avatarInner(currentUser)}</a>`;
     document.getElementById('comment-form').style.display = 'block';
   } else {
     nr.innerHTML = `
@@ -340,13 +339,9 @@ function renderComments(comments) {
   }
 
   list.innerHTML = comments.map(c => {
-    const av = (c.display_name || c.username || '?')[0].toUpperCase();
-    const avatarHtml = c.avatar_url
-      ? `<img src="${escapeHtml(c.avatar_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${av}'">`
-      : av;
     return `
       <div class="comment-item">
-        <div class="avatar" style="width:36px;height:36px;font-size:.82rem;flex-shrink:0;">${avatarHtml}</div>
+        <a href="profilo.html?id=${c.user_id}" class="avatar" style="width:36px;height:36px;font-size:.82rem;flex-shrink:0;overflow:hidden;text-decoration:none;">${avatarInner(c)}</a>
         <div class="comment-body">
           <div class="comment-meta">
             <a class="comment-author" href="profilo.html?id=${c.user_id}">${escapeHtml(c.display_name || c.username)}</a>
@@ -448,18 +443,25 @@ function renderReview(r) {
   }
   
   // User
-  const av = (r.display_name || r.username || '?')[0].toUpperCase();
-  document.getElementById('rf-avatar').textContent = av;
+  const rfAv = document.getElementById('rf-avatar');
+  rfAv.innerHTML = avatarInner(r);
+  rfAv.style.overflow = 'hidden';
+  rfAv.style.cursor = 'pointer';
+  rfAv.onclick = () => { window.location.href = 'profilo.html?id=' + r.user_id; };
   const nameEl = document.getElementById('rf-username');
   nameEl.innerHTML = `<a href="profilo.html?id=${r.user_id}" style="cursor:pointer;transition:color .2s" onmouseover="this.style.color='var(--honey)'" onmouseout="this.style.color=''">${escapeHtml(r.display_name || r.username)}</a>`;
   document.getElementById('rf-date').textContent = formatDate(r.created_at);
-  
+
   // Likes
   document.getElementById('likes-count').textContent = r.likes_count;
   document.getElementById('dislikes-count').textContent = r.dislikes_count;
 
-  // Author sidebar — nome cliccabile
-  document.getElementById('author-avatar').textContent = av;
+  // Author sidebar — nome + avatar cliccabili
+  const authAv = document.getElementById('author-avatar');
+  authAv.innerHTML = avatarInner(r);
+  authAv.style.overflow = 'hidden';
+  authAv.style.cursor = 'pointer';
+  authAv.onclick = () => { window.location.href = 'profilo.html?id=' + r.user_id; };
   const authorNameEl = document.getElementById('author-name');
   authorNameEl.innerHTML = `<a href="profilo.html?id=${r.user_id}" style="color:inherit;text-decoration:none;cursor:pointer" onmouseover="this.style.color='var(--honey)'" onmouseout="this.style.color=''">${escapeHtml(r.display_name || r.username)}</a>`;
 

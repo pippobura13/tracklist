@@ -135,7 +135,7 @@
 
 <div id="toast"></div>
 
-<script src="api.js?v=5"></script>
+<script src="api.js?v=7"></script>
 <script>
 let followingList = [];
 let activeUserId = 'all';
@@ -144,10 +144,9 @@ let currentUser = null;
 (async function init() {
   if (!Auth.isLoggedIn()) { window.location.href = 'accedi.html'; return; }
   try { currentUser = await Auth.me(); } catch { Auth.logout(); return; }
-  const av = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
   document.getElementById('nav-right').innerHTML = `
     <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
-    <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">${av}</a>`;
+    <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;overflow:hidden;">${avatarInner(currentUser)}</a>`;
   const [followingRes, suggestionsRes] = await Promise.allSettled([Users.following(), Users.suggestions()]);
   followingList = followingRes.status === 'fulfilled' ? (followingRes.value.users || []) : [];
   const suggestions = suggestionsRes.status === 'fulfilled' ? (suggestionsRes.value.users || []) : [];
@@ -161,9 +160,8 @@ function renderUserStrip() {
   strip.innerHTML =
     `<button class="user-chip on" onclick="filterUser(this,'all')"><span style="font-size:.85rem">👥</span> Tutti</button>` +
     followingList.map(u => {
-      const av = (u.display_name || u.username || '?')[0].toUpperCase();
       return `<button class="user-chip" onclick="filterUser(this,${u.id})">
-        <span class="av">${av}</span>${(u.display_name || u.username).split(' ')[0]}
+        <span class="av" style="overflow:hidden;">${avatarInner(u)}</span>${(u.display_name || u.username).split(' ')[0]}
       </button>`;
     }).join('');
 }
@@ -172,10 +170,9 @@ function renderSuggestions(suggestions) {
   const sl = document.getElementById('suggestions-list');
   if (!suggestions.length) { sl.innerHTML = '<p style="padding:18px 20px;color:var(--text-dim);font-size:.82rem">Nessun suggerimento disponibile</p>'; return; }
   sl.innerHTML = suggestions.map(s => {
-    const av = (s.display_name || s.username || '?')[0].toUpperCase();
     return `<div class="user-item">
       <a href="profilo.html?id=${s.id}" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;color:inherit;text-decoration:none;">
-        <div class="avatar" style="width:38px;height:38px;font-size:.9rem;flex-shrink:0;">${av}</div>
+        <div class="avatar" style="width:38px;height:38px;font-size:.9rem;flex-shrink:0;overflow:hidden;">${avatarInner(s)}</div>
         <div class="user-info">
           <div class="name" style="transition:color .15s">${s.display_name || s.username}</div>
           <div class="meta">${s.genre || ''} · ${s.followers_count ?? 0} seguaci</div>
@@ -202,7 +199,6 @@ async function renderFeed() {
     }
     let html = '<div class="reviews-grid">';
     reviews.forEach((r, i) => {
-      const av = (r.display_name || r.username || '?')[0].toUpperCase();
       const name = r.display_name || r.username;
       const tracks = Array.isArray(r.fav_tracks_json) ? r.fav_tracks_json : [];
       html += `<article class="review-card" onclick="goDetail(${r.review_id})" style="animation:fadeUp .35s ease both;animation-delay:${i*.05}s">
@@ -221,7 +217,7 @@ async function renderFeed() {
         </div>
         <div class="rc-footer">
           <div class="rc-user">
-            <div class="avatar" style="width:28px;height:28px;font-size:.73rem;">${av}</div>
+            <div class="avatar" style="width:28px;height:28px;font-size:.73rem;overflow:hidden;">${avatarInner(r)}</div>
             <div>
               <a href="profilo.html?id=${r.user_id}" class="rc-user-name"
                 onclick="event.stopPropagation()"

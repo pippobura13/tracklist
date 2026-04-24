@@ -325,7 +325,7 @@
 
 <div id="toast"></div>
 
-<script src="api.js?v=5"></script>
+<script src="api.js?v=7"></script>
 <script>
 let activeSort  = "new";
 let activeQuery = "";
@@ -344,10 +344,9 @@ let _albumSearchTimer = null;
   }
   const nr = document.getElementById('nav-right');
   if (currentUser) {
-    const av = (currentUser.display_name || currentUser.username || '?')[0].toUpperCase();
     nr.innerHTML = `
       <a href="recensione.html" class="btn btn-gold">＋ Recensisci</a>
-      <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;">${av}</a>`;
+      <a href="profilo.html" class="avatar" style="width:36px;height:36px;font-size:.85rem;text-decoration:none;overflow:hidden;">${avatarInner(currentUser)}</a>`;
     document.getElementById('hero-wrap').style.display = 'none';
     
     // Show tab bar and start polling
@@ -405,6 +404,10 @@ function renderNotifications(notifications) {
 
   list.innerHTML = notifications.map(n => `
     <div class="notif-item unread" onclick="goDetail(${n.review_id})">
+      <a href="profilo.html?id=${n.user_id}" onclick="event.stopPropagation()"
+        class="avatar" style="width:40px;height:40px;font-size:.85rem;flex-shrink:0;overflow:hidden;text-decoration:none;">
+        ${avatarInner(n)}
+      </a>
       <div class="notif-cover">
         ${n.cover_url ? `<img src="${n.cover_url}" alt="">` : '🎵'}
       </div>
@@ -515,8 +518,8 @@ async function renderGrid(reset = true) {
           </div>
           <div class="rc-footer">
             <div class="rc-user">
-              <div class="avatar" style="width:28px;height:28px;font-size:.73rem;">
-                ${(r.display_name || r.username || '?')[0].toUpperCase()}
+              <div class="avatar" style="width:28px;height:28px;font-size:.73rem;overflow:hidden;">
+                ${avatarInner(r)}
               </div>
               <div>
                 <a class="rc-user-name" href="profilo.html?id=${r.user_id}"
@@ -595,9 +598,8 @@ function onUserSearch(value) {
         return;
       }
       box.innerHTML = users.map(u => {
-        const av = (u.display_name || u.username || '?')[0].toUpperCase();
         return `<div class="user-search-item" onmousedown="goToProfile(${u.id})">
-          <div class="avatar" style="width:36px;height:36px;font-size:.82rem;flex-shrink:0;">${av}</div>
+          <div class="avatar" style="width:36px;height:36px;font-size:.82rem;flex-shrink:0;overflow:hidden;">${avatarInner(u)}</div>
           <div style="min-width:0">
             <div style="font-size:.86rem;font-weight:600;">${escapeHtml(u.display_name || u.username)}</div>
             <div style="font-size:.72rem;color:var(--text-dim);">@${escapeHtml(u.username)} · ${u.reviews_count} recensioni · ${u.followers_count} seguaci</div>
