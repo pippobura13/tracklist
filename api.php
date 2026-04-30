@@ -548,7 +548,7 @@ switch ($action) {
         
         if (!$spotifyId) errorResponse('Album non selezionato');
         if ($rating < 1 || $rating > 5) errorResponse('Valutazione non valida');
-        if (strlen($body) < 30) errorResponse('Recensione troppo breve (minimo 30 caratteri)');
+        if (strlen($body) < 10) errorResponse('Recensione troppo breve (minimo 10 caratteri)');
         
         $pdo = getDB();
         

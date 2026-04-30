@@ -8,7 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="shared.css" />
 <style>
-.create-page { padding: 44px 0 90px; }
+.create-page { padding: 44px 350px 90px; }
+/* body */
 .page-back {
   display: inline-flex; align-items: center; gap: 8px;
   color: var(--text-muted); font-size: .85rem; margin-bottom: 28px;
@@ -221,7 +222,7 @@
 
 <div class="page-wrap">
   <div class="container-sm create-page">
-    <a class="page-back" href="home.html">← Torna alla home</a>
+    
     <h1 class="page-title">Nuova Recensione</h1>
     <p class="page-sub">Cerca l'album su Spotify, seleziona le tracce che ami e condividi la tua opinione.</p>
 
@@ -300,7 +301,7 @@
         <div class="step-block" id="block-review">
           <div class="step-block-head">
             <span class="step-block-title"><span>✍️</span> La tua recensione</span>
-            <span class="step-block-badge badge-req">Richiesta · min 30 caratteri</span>
+            <span class="step-block-badge badge-req">Richiesta · min 10 caratteri</span>
           </div>
           <textarea class="form-input review-textarea" id="review-text"
             placeholder="Condividi la tua esperienza. Cosa ti ha colpito di questo album? La produzione, i testi, l'evoluzione artistica?"
@@ -496,7 +497,7 @@ function updateChar(el) {
   const cc  = document.getElementById('char-count');
   cc.textContent = `${len} caratteri`;
   cc.classList.toggle('warn', len > 1400);
-  if (len >= 30) updateSteps(4);
+  if (len >= 10) updateSteps(4);
   updatePreview();
 }
 
@@ -538,7 +539,7 @@ async function publish() {
   if (!selectedAlbum) { showToast('❌ Seleziona prima un album'); return; }
   if (!rating) { showToast('❌ Dai una valutazione all\'album'); return; }
   const body = document.getElementById('review-text').value.trim();
-  if (body.length < 30) { showToast('❌ Scrivi almeno 30 caratteri di recensione'); return; }
+  if (body.length < 10) { showToast('❌ Scrivi almeno 10 caratteri di recensione'); return; }
   const btn = document.querySelector('.btn-gold[onclick="publish()"]');
   btn.disabled = true; btn.textContent = 'Pubblicazione…';
   try {
