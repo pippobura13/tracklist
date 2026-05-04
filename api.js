@@ -546,70 +546,18 @@ const Messages = {
 };
 
 // ============================================================
-// NOTIFICATIONS CLASS - Sistema notifiche con polling
+// NOTIFICATIONS
 // ============================================================
 
 const Notifications = {
-    _pollTimer: null,
-    _lastCheck: null,
-    _callbacks: [],
-    
     /**
-     * Ottieni notifiche recenti
+     * Ottieni notifiche recenti (recensioni dai seguiti nelle ultime 24h)
+     * @param {string|null} since  - ISO timestamp opzionale per filtrare
      */
     async get(since = null) {
-        const params = {};
-        if (since) params.since = since;
-        
+        const params = since ? { since } : {};
         const data = await ApiClient.get('notifications', params);
         return { notifications: data.notifications || [] };
-    },
-    
-    /**
-     * Avvia polling notifiche
-     * @param callback Funzione chiamata quando ci sono nuove notifiche
-     */
-    startPolling(callback, interval = POLLING_INTERVAL) {
-        this.stopPolling();
-        
-        if (callback) this._callbacks.push(callback);
-        this._lastCheck = new Date().toISOString();
-        
-        const poll = async () => {
-            try {
-                const { notifications } = await this.get(this._lastCheck);
-                if (notifications.length > 0) {
-                    this._lastCheck = new Date().toISOString();
-                    this._callbacks.forEach(cb => cb(notifications));
-                }
-            } catch (err) {
-                console.error('Notifications poll error:', err);
-            }
-        };
-        
-        // Prima esecuzione immediata
-        poll();
-        
-        // Poi polling periodico
-        this._pollTimer = setInterval(poll, interval);
-    },
-    
-    /**
-     * Ferma polling
-     */
-    stopPolling() {
-        if (this._pollTimer) {
-            clearInterval(this._pollTimer);
-            this._pollTimer = null;
-        }
-        this._callbacks = [];
-    },
-    
-    /**
-     * Aggiungi callback per nuove notifiche
-     */
-    onNew(callback) {
-        this._callbacks.push(callback);
     }
 };
 

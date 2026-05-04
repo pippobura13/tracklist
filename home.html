@@ -210,19 +210,6 @@
 }
 .dismiss-btn:hover { color: var(--honey); background: rgba(245,166,35,.08); }
 
-/* Desktop notification permission banner */
-.notif-permission-banner {
-  display: flex; align-items: center; gap: 12px; justify-content: space-between;
-  background: rgba(245,166,35,.07); border: 1px solid var(--border-honey);
-  border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px;
-  font-size: .82rem; color: var(--text-muted);
-}
-.notif-permission-banner button {
-  font-size: .76rem; padding: 5px 14px;
-  background: var(--honey); color: var(--hive-950);
-  border-radius: var(--radius-xs); font-weight: 600;
-}
-
 @media (max-width: 860px) {
   .hero { grid-template-columns: 1fr; padding: 40px 18px 40px; gap: 36px; }
   .hero-visual { display: none; }
@@ -291,12 +278,6 @@
   <div class="notif-page">
     <div class="notif-page-header">
       <span class="notif-page-title">🔔 Notifiche</span>
-      <button class="dismiss-btn" onclick="clearNotifications()">Azzera tutto</button>
-    </div>
-    <!-- Banner permesso notifiche desktop (mostrato solo se necessario) -->
-    <div class="notif-permission-banner" id="notif-permission-banner" style="display:none">
-      <span>🔔 Abilita le notifiche desktop per ricevere avvisi anche quando sei su un'altra scheda</span>
-      <button onclick="requestDesktopPermission()">Abilita</button>
     </div>
     <div class="notif-page-list" id="notif-list">
       <div class="notif-empty">Nessuna nuova notifica</div>
@@ -353,19 +334,15 @@
 // ============================================================
 // CONSTANTS & STATE
 // ============================================================
-const NOTIF_VIEWED_KEY  = 'hm_notif_viewed_at';   // ultima volta che l'utente ha aperto il tab notifiche
-const NOTIF_CLEARED_KEY = 'hm_notif_cleared_at';  // ultima volta che ha cliccato "Azzera"
+const NOTIF_SEEN_KEY = 'hm_notif_seen_at'; // ultima volta che l'utente ha aperto il tab notifiche
 
 let activeSort  = "new";
 let activeQuery = "";
 let currentPage  = 1;
 let currentUser  = null;
 
-let notificationsCache = [];    // notifiche filtrate (post-cleared)
-let notifPollTimer     = null;  // timer polling fallback
-let notifSSE           = null;  // EventSource per real-time
-let notifChannel       = null;  // BroadcastChannel per sincronizzazione cross-tab
-let _prevUnreadCount   = -1;    // per rilevare nuove notifiche durante il polling
+let notificationsCache = [];
+let notifPollTimer     = null;
 let _albumSearchTimer  = null;
 
 // ============================================================
@@ -405,107 +382,23 @@ let _albumSearchTimer  = null;
 })();
 
 // ============================================================
-// NOTIFICATION SYSTEM — avvio
+// NOTIFICATION SYSTEM
 // ============================================================
 
 function startNotificationsSystem() {
-  // 1. Prima lettura immediata
   loadNotifications();
-
-  // 2. Polling di fallback ogni 15s
-  notifPollTimer = setInterval(loadNotifications, 15000);
-
-  // 3. Ricarica subito quando la scheda torna in primo piano
+  notifPollTimer = setInterval(loadNotifications, 30000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) loadNotifications();
   });
-
-  // 4. Real-time via SSE (se il server lo supporta)
-  connectSSE();
-
-  // 5. Sincronizzazione cross-tab via BroadcastChannel
-  try {
-    notifChannel = new BroadcastChannel('hm_notifications');
-    notifChannel.onmessage = (e) => {
-      if (e.data?.type === 'new')     loadNotifications();
-      if (e.data?.type === 'cleared') {
-        // Un altro tab ha azzerato: aggiorna il localStorage e ri-renderizza
-        if (e.data.clearedAt) localStorage.setItem(NOTIF_CLEARED_KEY, e.data.clearedAt);
-        if (e.data.viewedAt)  localStorage.setItem(NOTIF_VIEWED_KEY,  e.data.viewedAt);
-        loadNotifications();
-      }
-    };
-  } catch { /* BroadcastChannel non supportato */ }
-
-  // 6. Mostra banner permesso desktop se non ancora deciso
-  if ('Notification' in window && Notification.permission === 'default') {
-    document.getElementById('notif-permission-banner').style.display = 'flex';
-  }
 }
 
-// ── SSE (Server-Sent Events) ──────────────────────────────
-function connectSSE() {
-  if (!window.EventSource) return;
-  const token = localStorage.getItem('hm_token') || '';
-
-  try {
-    notifSSE = new EventSource(`/api/notifications/stream?token=${encodeURIComponent(token)}`);
-
-    // Il server invia un evento "notification" quando arriva qualcosa di nuovo
-    notifSSE.addEventListener('notification', () => {
-      loadNotifications();
-      notifChannel?.postMessage({ type: 'new' });
-    });
-
-    notifSSE.onerror = () => {
-      // SSE non disponibile: il polling di fallback è già attivo
-      notifSSE.close();
-      notifSSE = null;
-    };
-  } catch { /* EventSource fallisce silenziosamente */ }
-}
-
-// ── Carica notifiche dal server ──────────────────────────
 async function loadNotifications() {
   if (!currentUser) return;
   try {
     const { notifications } = await Notifications.get();
-    const raw        = notifications || [];
-    const clearedAt  = localStorage.getItem(NOTIF_CLEARED_KEY);
-    const viewedAt   = localStorage.getItem(NOTIF_VIEWED_KEY);
-
-    // FIX 3 — filtra le notifiche anteriori all'ultima "Azzera"
-    // (anche le retroattive vengono escluse qui se il backend non lo fa già)
-    const filtered = clearedAt
-      ? raw.filter(n => new Date(n.created_at) > new Date(clearedAt))
-      : raw;
-
-    // FIX 4 — conta le notifiche non ancora viste
-    const unreadNow = filtered.filter(n =>
-      !viewedAt || new Date(n.created_at) > new Date(viewedAt)
-    ).length;
-
-    // FIX 4 — avvisa se arrivano nuove notifiche mentre siamo già sulla pagina
-    if (_prevUnreadCount >= 0 && unreadNow > _prevUnreadCount) {
-      const newest = filtered.find(n => !viewedAt || new Date(n.created_at) > new Date(viewedAt));
-      if (newest) {
-        const msg = buildNotifText(newest);
-        if (document.hidden) {
-          showDesktopNotif('🔔 Hive Music', msg);
-        } else {
-          // Siamo sulla pagina ma sul tab Feed: mostra un toast
-          const isOnFeedTab = document.getElementById('tab-feed-content').style.display !== 'none';
-          if (isOnFeedTab) showToast('🔔 ' + msg);
-        }
-        // Propaga a eventuali altri tab
-        notifChannel?.postMessage({ type: 'new' });
-      }
-    }
-
-    _prevUnreadCount  = unreadNow;
-    notificationsCache = filtered;
-    renderNotifications(filtered);
-
+    notificationsCache = notifications || [];
+    renderNotifications(notificationsCache);
   } catch (err) {
     console.error('Errore notifiche:', err);
   }
@@ -515,11 +408,10 @@ async function loadNotifications() {
 function renderNotifications(notifications) {
   const list    = document.getElementById('notif-list');
   const badge   = document.getElementById('notif-tab-badge');
-  const viewedAt = localStorage.getItem(NOTIF_VIEWED_KEY);
+  const seenAt  = localStorage.getItem(NOTIF_SEEN_KEY);
 
-  // FIX 1 — il badge mostra solo le notifiche non ancora viste
   const unreadCount = notifications.filter(n =>
-    !viewedAt || new Date(n.created_at) > new Date(viewedAt)
+    !seenAt || new Date(n.created_at) > new Date(seenAt)
   ).length;
 
   if (unreadCount > 0) {
@@ -535,23 +427,17 @@ function renderNotifications(notifications) {
   }
 
   list.innerHTML = notifications.map(n => {
-    const isUnread  = !viewedAt || new Date(n.created_at) > new Date(viewedAt);
+    const isUnread  = !seenAt || new Date(n.created_at) > new Date(seenAt);
     const actorName = escapeHtml(n.actor_display_name || n.display_name || n.actor_username || n.username || 'Qualcuno');
     const actorId   = n.actor_id   || n.user_id;
     const reviewId  = n.review_id  || null;
 
-    // Icona/copertina: per follow mostra avatar, altrimenti copertina album
     const coverHtml = (n.type === 'follow')
       ? `<div class="avatar" style="width:48px;height:48px;font-size:1.1rem;overflow:hidden;">${avatarInner({ avatar_url: n.actor_avatar_url || n.avatar_url, display_name: actorName })}</div>`
       : `<div class="notif-cover">${n.cover_url ? `<img src="${escapeHtml(n.cover_url)}" alt="">` : '🎵'}</div>`;
 
-    // Testo della notifica in base al tipo
     const textHtml = buildNotifHtml(n, actorName, actorId);
-
-    // Azione onclick
-    const onclick = (n.type === 'follow')
-      ? `goToProfile(${actorId})`
-      : (reviewId ? `goDetail(${reviewId})` : '');
+    const onclick  = (n.type === 'follow') ? `goToProfile(${actorId})` : (reviewId ? `goDetail(${reviewId})` : '');
 
     return `
       <div class="notif-item${isUnread ? ' unread' : ''}" onclick="${onclick}" role="button" tabindex="0">
@@ -600,22 +486,10 @@ function buildNotifText(n) {
 }
 
 // ── Segna le notifiche come "viste" ──────────────────────
-// FIX 1 — chiamato quando l'utente apre il tab Notifiche
 function markNotificationsViewed() {
-  const now = new Date().toISOString();
-  localStorage.setItem(NOTIF_VIEWED_KEY, now);
-
-  // Nascondi subito il badge
-  const badge = document.getElementById('notif-tab-badge');
-  badge.style.display = 'none';
-
-  // Re-renderizza senza il bollino "unread" sugli item
+  localStorage.setItem(NOTIF_SEEN_KEY, new Date().toISOString());
+  document.getElementById('notif-tab-badge').style.display = 'none';
   renderNotifications(notificationsCache);
-
-  // Comunica al backend (opzionale, se l'API lo supporta)
-  try {
-    if (typeof Notifications.markRead === 'function') Notifications.markRead();
-  } catch {}
 }
 
 // ── Tab switch ────────────────────────────────────────────
@@ -635,50 +509,8 @@ function switchTab(tab) {
     notifContent.style.display = 'block';
     feedBtn.classList.remove('active');
     notifBtn.classList.add('active');
-
-    // FIX 1 — segna come viste solo quando l'utente apre davvero il tab
     markNotificationsViewed();
   }
-}
-
-// ── Azzera notifiche ──────────────────────────────────────
-// FIX 3 — ora persiste anche dopo reload grazie a localStorage
-function clearNotifications() {
-  const now = new Date().toISOString();
-
-  // Salva entrambi i timestamp così il filtro in loadNotifications funziona subito
-  localStorage.setItem(NOTIF_CLEARED_KEY, now);
-  localStorage.setItem(NOTIF_VIEWED_KEY,  now);
-
-  _prevUnreadCount   = 0;
-  notificationsCache = [];
-  renderNotifications([]);
-  showToast('Notifiche azzerate');
-
-  // Sincronizza gli altri tab aperti
-  notifChannel?.postMessage({ type: 'cleared', clearedAt: now, viewedAt: now });
-
-  // Comunica al backend (opzionale, chiama sp_dismiss_notifications sul server)
-  try {
-    if (typeof Notifications.clear === 'function') Notifications.clear();
-  } catch {}
-}
-
-// ── Notifiche desktop ─────────────────────────────────────
-// FIX 4 — notifica sistema quando la scheda è in background
-function showDesktopNotif(title, body) {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '/favicon.ico' });
-  }
-}
-
-function requestDesktopPermission() {
-  if (!('Notification' in window)) return;
-  Notification.requestPermission().then(permission => {
-    document.getElementById('notif-permission-banner').style.display = 'none';
-    if (permission === 'granted') showToast('Notifiche desktop abilitate ✓');
-  });
 }
 
 // ============================================================
@@ -881,9 +713,7 @@ function showToast(msg) {
 // CLEANUP
 // ============================================================
 window.addEventListener('beforeunload', () => {
-  if (notifPollTimer)  clearInterval(notifPollTimer);
-  if (notifSSE)        { notifSSE.close(); notifSSE = null; }
-  if (notifChannel)    { notifChannel.close(); notifChannel = null; }
+  if (notifPollTimer) clearInterval(notifPollTimer);
 });
 </script>
 </body>
