@@ -1,0 +1,8 @@
+# Credenziali — NON versionare
+.env
+
+# Upload utenti
+uploads/avatars/
+
+# Log e cache
+*.log

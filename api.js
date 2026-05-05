@@ -4,14 +4,14 @@
  * 
  * Classi disponibili:
  * - Auth: Autenticazione (login, register, logout, me, checkUsername)
- * - Albums: Ricerca album Spotify (search)
- * - Reviews: Gestione recensioni (list, create, like)
+ * - Albums: Ricerca album Spotify via backend (search, getTracks)
+ * - Reviews: Gestione recensioni (list, create, like, delete)
  * - Stats: Statistiche piattaforma (get)
  * - Users: Gestione utenti e follow (following, suggestions, toggleFollow)
  * - Feed: Feed recensioni dai seguiti (get)
  * - Messages: Messaggistica (conversations, list, send, markRead)
- * - Notifications: Notifiche (get, poll)
- * - Spotify: Integrazione diretta Spotify API (solo frontend)
+ * - Notifications: Notifiche recensioni dai seguiti (get)
+ * - ChatPolling: Polling periodico per messaggi
  */
 
 // ============================================================
@@ -19,11 +19,7 @@
 // ============================================================
 
 const API_BASE = 'api.php';
-const SPOTIFY_CLIENT_ID = 'd3859dddd2e44b88a30790a1c1f404dd';
-const SPOTIFY_CLIENT_SECRET = 'd3455ddc48414cdebed233dab5684a32';
-const POLLING_INTERVAL = 12000; // 12 secondi
-const WS_ENABLED = false; // WebSocket disabilitato, usiamo polling
-const WS_URL = ''; // Non usato
+const POLLING_INTERVAL = 12000; // 12 secondi (usato da ChatPolling)
 
 // ============================================================
 // HTTP CLIENT BASE
@@ -199,109 +195,6 @@ const Albums = {
     async getTracks(spotifyId) {
         const data = await ApiClient.get('album_tracks', { spotify_id: spotifyId });
         return data.tracks || [];
-    }
-};
-
-// ============================================================
-// SPOTIFY CLASS - Integrazione diretta Spotify API (Client Credentials)
-// ============================================================
-
-const Spotify = {
-    _token: null,
-    _tokenExpiry: 0,
-    
-    /**
-     * Ottieni access token Spotify (Client Credentials Flow)
-     */
-    async getToken() {
-        if (this._token && Date.now() < this._tokenExpiry) {
-            return this._token;
-        }
-        
-        const credentials = btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
-        
-        const response = await fetch('https://accounts.spotify.com/api/token', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${credentials}`,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'grant_type=client_credentials'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Errore autenticazione Spotify');
-        }
-        
-        const data = await response.json();
-        this._token = data.access_token;
-        this._tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
-        
-        return this._token;
-    },
-    
-    /**
-     * Richiesta generica a Spotify API
-     */
-    async request(endpoint) {
-        const token = await this.getToken();
-        
-        const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Spotify API error: ${response.status}`);
-        }
-        
-        return response.json();
-    },
-    
-    /**
-     * Cerca album
-     */
-    async searchAlbums(query, limit = 10) {
-        const params = new URLSearchParams({
-            q: query,
-            type: 'album',
-            limit: limit,
-            market: 'IT'
-        });
-        
-        const data = await this.request(`/search?${params}`);
-        
-        return (data.albums?.items || []).map(item => ({
-            spotify_id: item.id,
-            title: item.name,
-            artist: item.artists[0]?.name || 'Sconosciuto',
-            cover_url: item.images[0]?.url || null,
-            release_year: item.release_date?.substring(0, 4) || '',
-            tracks: [] // Verranno caricate separatamente
-        }));
-    },
-    
-    /**
-     * Ottieni dettagli album con tracce
-     */
-    async getAlbum(albumId) {
-        const data = await this.request(`/albums/${albumId}?market=IT`);
-        
-        return {
-            spotify_id: data.id,
-            title: data.name,
-            artist: data.artists[0]?.name || 'Sconosciuto',
-            cover_url: data.images[0]?.url || null,
-            release_year: data.release_date?.substring(0, 4) || '',
-            tracks: (data.tracks?.items || []).map(t => t.name)
-        };
-    },
-    
-    /**
-     * Ottieni solo le tracce di un album
-     */
-    async getAlbumTracks(albumId) {
-        const data = await this.request(`/albums/${albumId}/tracks?limit=50&market=IT`);
-        return (data.items || []).map(t => t.name);
     }
 };
 

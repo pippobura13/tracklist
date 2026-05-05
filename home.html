@@ -406,9 +406,9 @@ async function loadNotifications() {
 
 // ── Renderizza la lista notifiche ───────────────────────
 function renderNotifications(notifications) {
-  const list    = document.getElementById('notif-list');
-  const badge   = document.getElementById('notif-tab-badge');
-  const seenAt  = localStorage.getItem(NOTIF_SEEN_KEY);
+  const list   = document.getElementById('notif-list');
+  const badge  = document.getElementById('notif-tab-badge');
+  const seenAt = localStorage.getItem(NOTIF_SEEN_KEY);
 
   const unreadCount = notifications.filter(n =>
     !seenAt || new Date(n.created_at) > new Date(seenAt)
@@ -428,61 +428,26 @@ function renderNotifications(notifications) {
 
   list.innerHTML = notifications.map(n => {
     const isUnread  = !seenAt || new Date(n.created_at) > new Date(seenAt);
-    const actorName = escapeHtml(n.actor_display_name || n.display_name || n.actor_username || n.username || 'Qualcuno');
-    const actorId   = n.actor_id   || n.user_id;
-    const reviewId  = n.review_id  || null;
-
-    const coverHtml = (n.type === 'follow')
-      ? `<div class="avatar" style="width:48px;height:48px;font-size:1.1rem;overflow:hidden;">${avatarInner({ avatar_url: n.actor_avatar_url || n.avatar_url, display_name: actorName })}</div>`
-      : `<div class="notif-cover">${n.cover_url ? `<img src="${escapeHtml(n.cover_url)}" alt="">` : '🎵'}</div>`;
-
-    const textHtml = buildNotifHtml(n, actorName, actorId);
-    const onclick  = (n.type === 'follow') ? `goToProfile(${actorId})` : (reviewId ? `goDetail(${reviewId})` : '');
+    const actorName = escapeHtml(n.display_name || n.username || 'Qualcuno');
+    const actorId   = n.user_id;
+    const album     = n.album_title ? `<strong>${escapeHtml(n.album_title)}</strong>` : 'un album';
+    const actorLink = `<a href="profilo.html?id=${actorId}" onclick="event.stopPropagation()" style="color:var(--honey);font-weight:600;text-decoration:none">${actorName}</a>`;
+    const textHtml  = `${actorLink} ha recensito ${album}`;
 
     return `
-      <div class="notif-item${isUnread ? ' unread' : ''}" onclick="${onclick}" role="button" tabindex="0">
+      <div class="notif-item${isUnread ? ' unread' : ''}" onclick="${n.review_id ? `goDetail(${n.review_id})` : ''}" role="button" tabindex="0">
         <div class="notif-dot"></div>
         <a href="profilo.html?id=${actorId}" onclick="event.stopPropagation()"
            class="avatar" style="width:38px;height:38px;font-size:.82rem;flex-shrink:0;overflow:hidden;text-decoration:none;">
-          ${avatarInner({ avatar_url: n.actor_avatar_url || n.avatar_url, display_name: actorName, username: n.actor_username || n.username })}
+          ${avatarInner({ avatar_url: n.avatar_url, display_name: actorName, username: n.username })}
         </a>
-        ${coverHtml}
+        <div class="notif-cover">${n.cover_url ? `<img src="${escapeHtml(n.cover_url)}" alt="">` : '🎵'}</div>
         <div class="notif-content">
           <div class="notif-text">${textHtml}</div>
           <div class="notif-time">${formatDate(n.created_at)}</div>
         </div>
       </div>`;
   }).join('');
-}
-
-// Costruisce il testo HTML della notifica in base al tipo
-function buildNotifHtml(n, actorName, actorId) {
-  const album   = n.album_title ? `<strong>${escapeHtml(n.album_title)}</strong>` : 'un album';
-  const actor   = `<a href="profilo.html?id=${actorId}" onclick="event.stopPropagation()" style="color:var(--honey);font-weight:600;text-decoration:none">${actorName}</a>`;
-
-  switch (n.type) {
-    case 'like':
-      return `${actor} ha messo mi piace alla tua recensione di ${album}`;
-    case 'comment':
-      return `${actor} ha commentato la tua recensione di ${album}`;
-    case 'follow':
-      return `${actor} ha iniziato a seguirti`;
-    case 'review':
-    default:
-      return `${actor} ha recensito ${album}`;
-  }
-}
-
-// Testo plain per toast/notifica desktop
-function buildNotifText(n) {
-  const name  = n.actor_display_name || n.display_name || n.actor_username || n.username || 'Qualcuno';
-  const album = n.album_title || 'un album';
-  switch (n.type) {
-    case 'like':    return `${name} ha messo mi piace alla tua recensione di ${album}`;
-    case 'comment': return `${name} ha commentato la tua recensione di ${album}`;
-    case 'follow':  return `${name} ha iniziato a seguirti`;
-    default:        return `${name} ha recensito ${album}`;
-  }
 }
 
 // ── Segna le notifiche come "viste" ──────────────────────
