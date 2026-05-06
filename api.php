@@ -13,7 +13,6 @@
  * - GET  /api.php?action=review&id=xxx
  * - POST /api.php?action=review_create
  * - POST /api.php?action=review_like
- * - POST /api.php?action=draft_save
  * - GET  /api.php?action=feed&userId=xxx
  * - GET  /api.php?action=following
  * - GET  /api.php?action=suggestions
@@ -689,42 +688,6 @@ switch ($action) {
             'likes_count' => $likesCount,
             'dislikes_count' => $dislikesCount
         ]);
-        break;
-    
-    // --------------------------------------------------------
-    // DRAFTS: Save
-    // --------------------------------------------------------
-    case 'draft_save':
-        $user = requireAuth();
-        $input = getInput();
-        
-        $spotifyId = $input['spotify_id'] ?? null;
-        $rating = isset($input['rating']) ? (int)$input['rating'] : null;
-        $body = isset($input['body']) ? trim($input['body']) : null;
-        $favTracks = $input['fav_tracks'] ?? [];
-        
-        $pdo = getDB();
-        
-        // Verifica se esiste già una bozza
-        $stmt = $pdo->prepare('SELECT id FROM drafts WHERE user_id = ?');
-        $stmt->execute([$user['id']]);
-        $draft = $stmt->fetch();
-        
-        if ($draft) {
-            $stmt = $pdo->prepare('
-                UPDATE drafts SET spotify_id = ?, rating = ?, body = ?, fav_tracks_json = ?, updated_at = NOW()
-                WHERE user_id = ?
-            ');
-            $stmt->execute([$spotifyId, $rating, $body, json_encode($favTracks), $user['id']]);
-        } else {
-            $stmt = $pdo->prepare('
-                INSERT INTO drafts (user_id, spotify_id, rating, body, fav_tracks_json)
-                VALUES (?, ?, ?, ?, ?)
-            ');
-            $stmt->execute([$user['id'], $spotifyId, $rating, $body, json_encode($favTracks)]);
-        }
-        
-        jsonResponse(['success' => true]);
         break;
     
     // --------------------------------------------------------

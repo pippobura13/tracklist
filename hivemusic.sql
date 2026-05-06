@@ -176,8 +176,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `display_name`, `bio`, `avatar_url`, `created_at`, `updated_at`) VALUES
-(1, 'pippobura', 'filippoburato07@gmail.com', '$2y$10$NhLJcEVONYTaaEGMCV6lAuCuyCHfeyux9QBTmGAvSVyWRfpaGsBj2', 'Filippo Burato', NULL, NULL, '2026-05-06 16:37:20', '2026-05-06 16:42:26'),
-(2, 'atic', 'alessandromodolo@gmail.com', '$2y$10$AE2geAKwsrWjf9gQLwAdnetWd7yBiDP4.m1.KphDWgUsw0Yxbe/52', 'Alessandro Modolo', NULL, NULL, '2026-05-06 16:39:49', '2026-05-06 16:42:03');
+(1, 'pippobura', 'filippoburato07@gmail.com', '$2y$10$NhLJcEVONYTaaEGMCV6lAuCuyCHfeyux9QBTmGAvSVyWRfpaGsBj2', 'Filippo Burato', NULL, 'uploads/avatars/1_1778078541.jpg?t=1778078541581', '2026-05-06 16:37:20', '2026-05-06 16:42:26'),
+(2, 'atic', 'alessandromodolo@gmail.com', '$2y$10$AE2geAKwsrWjf9gQLwAdnetWd7yBiDP4.m1.KphDWgUsw0Yxbe/52', 'Alessandro Modolo', NULL, 'uploads/avatars/2_1778078522.jpg?t=1778078522276', '2026-05-06 16:39:49', '2026-05-06 16:42:03');
 
 --
 -- Indici per le tabelle scaricate
