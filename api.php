@@ -101,7 +101,7 @@ function getAuthUser(): ?array {
     if (!$payload || !isset($payload['user_id'])) return null;
     
     $pdo = getDB();
-    $stmt = $pdo->prepare('SELECT id, username, email, display_name, bio, avatar_url, created_at FROM users WHERE id = ?');
+    $stmt = $pdo->prepare('SELECT id, username, email, display_name, bio, avatar_url, role, banned_until, ban_reason, created_at FROM users WHERE id = ?');
     $stmt->execute([$payload['user_id']]);
     return $stmt->fetch() ?: null;
 }
@@ -314,19 +314,35 @@ switch ($action) {
         if (!$identifier || !$password) errorResponse('Credenziali mancanti');
         
         $pdo = getDB();
-        $stmt = $pdo->prepare('SELECT id, username, email, password_hash, display_name, bio, avatar_url FROM users WHERE username = ? OR email = ?');
-        $stmt->execute([$identifier, $identifier]);
-        $user = $stmt->fetch();
-        
-        if (!$user || !password_verify($password, $user['password_hash'])) {
-            errorResponse('Credenziali non valide', 401);
-        }
-        
-        unset($user['password_hash']);
-        $user['id'] = (int)$user['id'];
-        
-        $token = createJWT(['user_id' => $user['id']]);
-        jsonResponse(['success' => true, 'token' => $token, 'user' => $user]);
+        $stmt = $pdo->prepare('SELECT id, username, email, password_hash, display_name, bio, avatar_url, role, banned_until, ban_reason FROM users WHERE username = ? OR email = ?');
+            $stmt->execute([$identifier, $identifier]);
+            $user = $stmt->fetch();
+
+            if (!$user || !password_verify($password, $user['password_hash'])) {
+                errorResponse('Credenziali non valide', 401);
+            }
+
+            // Controllo ban
+            if ($user['banned_until'] !== null) {
+                $banExpiry = strtotime($user['banned_until']);
+                if ($banExpiry > time()) {
+                    $isPermanent = $user['banned_until'] >= '9999-12-31';
+                    $msg  = $isPermanent
+                        ? 'Account bannato permanentemente.'
+                        : 'Account bannato fino al ' . date('d/m/Y H:i', $banExpiry) . '.';
+                    if ($user['ban_reason']) $msg .= ' Motivo: ' . $user['ban_reason'];
+                    errorResponse($msg, 403);
+                }
+                // Ban scaduto: pulizia automatica
+                $pdo->prepare('UPDATE users SET banned_until = NULL, ban_reason = NULL WHERE id = ?')
+                    ->execute([$user['id']]);
+            }
+
+            unset($user['password_hash']);
+            $user['id'] = (int)$user['id'];
+
+            $token = createJWT(['user_id' => $user['id'], 'role' => $user['role']]);
+            jsonResponse(['success' => true, 'token' => $token, 'user' => $user]);
         break;
     
     // --------------------------------------------------------
