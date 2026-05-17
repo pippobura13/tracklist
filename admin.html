@@ -835,14 +835,14 @@ async function loadReviews(page) {
     tb.innerHTML = '<tr><td colspan="7" class="empty">Nessuna recensione.</td></tr>'; return;
   }
   tb.innerHTML = d.reviews.map(r => `<tr>
-    <td class="mono muted">${r.id}</td>
+    <td class="mono muted">${r.review_id}</td>
     <td>${esc(r.username || r.user?.username || '—')}</td>
     <td style="max-width:180px"><strong>${esc(r.album_title || r.album?.title || '—')}</strong><br><span class="muted" style="font-size:11px">${esc(r.album_artist || r.album?.artist || '')}</span></td>
     <td class="mono" style="color:var(--accent)">${'★'.repeat(r.rating)}</td>
     <td style="max-width:240px;font-size:12px;color:var(--muted)">${esc((r.body||'').substring(0,80))}…</td>
     <td class="mono muted" style="font-size:11px">${fmtDate(r.created_at)}</td>
     <td><div class="actions">
-      <button class="action-btn delete" onclick="openDeleteModal('review',${r.id},'Recensione di ${esc(r.username||'')}')">Elimina</button>
+      <button class="action-btn delete" data-type="review" data-id="${r.review_id}" data-desc="Recensione di ${esc(r.username||'')}" onclick="openDeleteModal(this.dataset.type, +this.dataset.id, this.dataset.desc)">Elimina</button>
     </div></td>
   </tr>`).join('');
   renderPagination('reviewsPagination', d.page || 1, d.pages || 1, loadReviews);
@@ -853,9 +853,7 @@ async function loadReviews(page) {
 // ============================================================
 async function loadComments(page) {
   comPage = page;
-  // Use reviews endpoint with high page then fallback
-  // Fetch via a generic approach
-  const d = await apiFetch('comments', 'GET', null, `&page=${page}`);
+  const d = await adminFetch('admin_comments', 'GET', null, `&page=${page}`);
   const tb = document.getElementById('commentsTable');
   if (!d.success || !d.comments?.length) {
     tb.innerHTML = '<tr><td colspan="6" class="empty">Nessun commento.</td></tr>'; return;
@@ -867,7 +865,7 @@ async function loadComments(page) {
     <td style="max-width:300px;font-size:12px;color:var(--muted)">${esc((c.body||'').substring(0,100))}</td>
     <td class="mono muted" style="font-size:11px">${fmtDate(c.created_at)}</td>
     <td><div class="actions">
-      <button class="action-btn delete" onclick="openDeleteModal('comment',${c.id},'Commento di ${esc(c.username||'')}')">Elimina</button>
+      <button class="action-btn delete" data-type="comment" data-id="${c.id}" data-desc="Commento di ${esc(c.username||'')}" onclick="openDeleteModal(this.dataset.type, +this.dataset.id, this.dataset.desc)">Elimina</button>
     </div></td>
   </tr>`).join('');
   renderPagination('commentsPagination', d.page || 1, d.pages || 1, loadComments);

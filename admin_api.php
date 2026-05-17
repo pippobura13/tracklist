@@ -406,6 +406,44 @@ switch ($action) {
         jsonResponse(['success' => true, 'message' => "Ruolo di {$target['username']} → $role"]);
     }
 
+    // ----------------------------------------------------------
+    // GET admin_comments — lista di tutti i commenti con paginazione
+    // Parametri: ?page=1
+    // ----------------------------------------------------------
+    case 'admin_comments': {
+        $admin  = requireAdmin();
+        $pdo    = getDB();
+        $page   = max(1, (int)($_GET['page'] ?? 1));
+        $limit  = 20;
+        $offset = ($page - 1) * $limit;
+
+        $total = (int)$pdo->query('SELECT COUNT(*) FROM comments')->fetchColumn();
+
+        $stmt = $pdo->prepare('
+            SELECT c.id, c.body, c.created_at, c.review_id,
+                   u.username
+            FROM comments c
+            JOIN users u ON c.user_id = u.id
+            ORDER BY c.created_at DESC
+            LIMIT ? OFFSET ?
+        ');
+        $stmt->execute([$limit, $offset]);
+        $comments = $stmt->fetchAll();
+
+        foreach ($comments as &$c) {
+            $c['id']        = (int)$c['id'];
+            $c['review_id'] = (int)$c['review_id'];
+        }
+
+        jsonResponse([
+            'success'  => true,
+            'comments' => $comments,
+            'total'    => $total,
+            'page'     => $page,
+            'pages'    => (int)ceil($total / $limit)
+        ]);
+    }
+
     default:
         errorResponse('Azione admin non riconosciuta: ' . $action, 400);
 }

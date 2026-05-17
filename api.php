@@ -483,6 +483,12 @@ switch ($action) {
             LIMIT $limit OFFSET $offset
         ";
         
+        // Count total for pagination
+        $countSql = "SELECT COUNT(*) FROM reviews r JOIN albums a ON r.album_id = a.id JOIN users u ON r.user_id = u.id $whereClause";
+        $countStmt = $pdo->prepare($countSql);
+        $countStmt->execute($params);
+        $total = (int)$countStmt->fetchColumn();
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $reviews = $stmt->fetchAll();
@@ -498,7 +504,7 @@ switch ($action) {
             $review['fav_tracks_json'] = json_decode($review['fav_tracks_json'] ?? '[]', true) ?: [];
         }
         
-        jsonResponse(['success' => true, 'reviews' => $reviews, 'page' => $page]);
+        jsonResponse(['success' => true, 'reviews' => $reviews, 'page' => $page, 'total' => $total, 'pages' => (int)ceil($total / $limit)]);
         break;
     
     // --------------------------------------------------------
