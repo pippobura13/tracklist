@@ -12,6 +12,7 @@ Hive Music è una web app sociale dove gli utenti possono recensire album cercat
 - [Schema del database](#schema-del-database)
 - [Autenticazione JWT](#autenticazione-jwt)
 - [API Endpoints](#api-endpoints)
+- [Admin Panel](#admin-panel)
 - [Client JavaScript (api.js)](#client-javascript-apijs)
 - [Polling in tempo reale](#polling-in-tempo-reale)
 - [Design System](#design-system)
@@ -30,6 +31,7 @@ hivemusic/
 ├── config.php          # Carica .env e definisce le costanti globali
 ├── db_connect.php      # Connessione PDO singleton al database
 ├── api.php             # Backend: unico file con tutte le route API
+├── admin_api.php       # Backend: route riservate agli amministratori
 │
 ├── api.js              # Frontend: classi helper per chiamare l'API
 ├── shared.css          # Stili condivisi a tutte le pagine
@@ -41,6 +43,7 @@ hivemusic/
 ├── messaggi.html       # Chat privata
 ├── dettaglio.html      # Dettaglio singola recensione + commenti
 ├── profilo.html        # Profilo utente
+├── admin.html          # Pannello di amministrazione (accesso solo admin)
 │
 └── uploads/
     └── avatars/        # Avatar caricati dagli utenti (creata automaticamente)
@@ -52,20 +55,10 @@ hivemusic/
 
 - PHP 8.0 o superiore con le estensioni `pdo_mysql` e `curl` attive
 - MySQL 5.7+ o MariaDB 10.3+
-- Server web Apache (consigliato XAMPP per lo sviluppo locale)
+- Server web Apache
 - Account Spotify Developer per le credenziali API
 
----
-
-## Installazione e configurazione
-
-### 1. Clona o copia i file nella root del server
-
-Per XAMPP: copia la cartella in `htdocs/hivemusic/`.
-
 ### 2. Crea il file `.env`
-
-Copia il file di esempio e compila i valori:
 
 ```
 DB_HOST=localhost
@@ -79,37 +72,13 @@ SPOTIFY_CLIENT_SECRET=<il-tuo-client-secret>
 JWT_SECRET=<stringa-casuale-lunga-e-sicura>
 ```
 
-> ⚠️ Non committare mai il file `.env` nel repository. È già incluso nel `.gitignore`.
-
-Le credenziali Spotify si ottengono creando un'app su [developer.spotify.com](https://developer.spotify.com/dashboard).
-
-### 3. Importa il database
-
-Crea il database e importa lo schema:
-
-```sql
-CREATE DATABASE hivemusic CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-Poi importa il file `schema.sql` tramite phpMyAdmin o da terminale:
-
-```bash
-mysql -u root -p hivemusic < schema.sql
-```
-
-### 4. Verifica i permessi
-
-La cartella `uploads/avatars/` viene creata automaticamente al primo upload. Assicurati che il server web abbia i permessi di scrittura sulla directory del progetto.
-
----
-
 ## Schema del database
 
 Il database contiene le seguenti tabelle principali:
 
 | Tabella | Descrizione |
 |---------|-------------|
-| `users` | Utenti registrati (username, email, password hash, avatar, bio) |
+| `users` | Utenti registrati (username, email, password hash, avatar, bio, ruolo, stato ban) |
 | `albums` | Album Spotify salvati localmente (spotify_id, titolo, artista, copertina, tracce) |
 | `reviews` | Recensioni degli utenti (voto 1–5, testo, tracce preferite) |
 | `likes` | Like/dislike sulle recensioni (value: `1` = like, `-1` = dislike) |
@@ -117,7 +86,17 @@ Il database contiene le seguenti tabelle principali:
 | `followers` | Relazioni follower/following tra utenti |
 | `messages` | Messaggi privati tra utenti |
 | `drafts` | Bozze di recensioni non ancora pubblicate |
+| `admin_log` | Audit log delle azioni eseguite dagli amministratori |
 
+### Campi aggiuntivi della tabella `users`
+
+Oltre ai campi di base, la tabella `users` include colonne per la gestione dei ruoli e dei ban:
+
+| Colonna | Tipo | Descrizione |
+|---------|------|-------------|
+| `role` | `enum('user','admin')` | Ruolo dell'utente. Default: `user` |
+| `banned_until` | `datetime` | Data di scadenza del ban. `NULL` = non bannato; `9999-12-31` = ban permanente |
+| `ban_reason` | `text` | Motivazione del ban (visibile agli admin) |
 ---
 
 ## Autenticazione JWT
@@ -132,9 +111,6 @@ Il sistema usa **JSON Web Token (JWT)** con algoritmo HS256.
    Authorization: Bearer <token>
    ```
 4. Il token scade dopo **7 giorni** (`JWT_EXPIRY = 86400 * 7`).
-
-**Note tecniche:**
-- Il backend gestisce la compatibilità con Apache/XAMPP, che a volte non espone `$_SERVER['HTTP_AUTHORIZATION']`, usando `apache_request_headers()` e `getallheaders()` come fallback.
 - La password è hashata con `password_hash()` di PHP (bcrypt).
 
 ---
@@ -169,7 +145,6 @@ Tutte le route passano per `api.php?action=<nome_azione>`. Il backend risponde s
 ```
 > `identifier` può essere username **o** email.
 
-**`check_username` — query param:** `?username=mario`
 
 ---
 
@@ -331,6 +306,111 @@ La ricerca Spotify è limitata al mercato italiano (`market=IT`), restituisce fi
 
 ---
 
+---
+
+## Admin Panel
+
+Il pannello di amministrazione è accessibile tramite `admin.html` e comunica esclusivamente con `admin_api.php`. Tutti gli endpoint richiedono un JWT valido con `role = 'admin'` nel payload.
+
+### Accesso
+
+L'admin panel ha una propria schermata di login. Per promuovere un utente ad amministratore è necessario impostare manualmente `role = 'admin'` nel database, oppure usare l'endpoint `admin_set_role` una volta che esiste già almeno un admin.
+
+### Endpoint Admin
+
+Tutte le route passano per `admin_api.php?action=<nome_azione>`.
+
+| Action | Metodo | Descrizione |
+|--------|--------|-------------|
+| `admin_users` | GET | Lista di tutti gli utenti con stato ban, ruolo e paginazione |
+| `admin_ban_user` | POST | Banna un utente per una durata definita |
+| `admin_unban_user` | POST | Rimuove il ban da un utente |
+| `admin_delete_review` | POST | Elimina una recensione (con motivazione) |
+| `admin_delete_comment` | POST | Elimina un commento (con motivazione) |
+| `admin_stats` | GET | Statistiche globali per la dashboard |
+| `admin_log` | GET | Audit log paginato delle azioni admin |
+| `admin_set_role` | POST | Promuove o degrada un utente (`admin` ↔ `user`) |
+| `admin_comments` | GET | Lista di tutti i commenti con paginazione |
+
+**`admin_users` — query params:**
+
+| Parametro | Default | Valori possibili |
+|-----------|---------|-----------------|
+| `page` | `1` | numero pagina (20 per pagina) |
+| `search` | — | ricerca per username o email |
+| `filter` | `all` | `all`, `banned`, `admin` |
+
+**`admin_ban_user` — body:**
+```json
+{
+  "userId": 7,
+  "duration": "7d",
+  "reason": "Spam ripetuto"
+}
+```
+> Durate supportate: `1d`, `7d`, `30d`, `90d`, `permanent`. Non è possibile bannare altri amministratori o se stessi.
+
+**`admin_unban_user` — body:**
+```json
+{ "userId": 7 }
+```
+
+**`admin_delete_review` — body:**
+```json
+{ "reviewId": 42, "reason": "Contenuto inappropriato" }
+```
+
+**`admin_delete_comment` — body:**
+```json
+{ "commentId": 15, "reason": "Insulti" }
+```
+
+**`admin_set_role` — body:**
+```json
+{ "userId": 7, "role": "admin" }
+```
+> `role` accetta solo `admin` o `user`. Non è possibile modificare il proprio ruolo.
+
+**`admin_stats` — risposta:**
+```json
+{
+  "total_users": 120,
+  "total_reviews": 450,
+  "total_comments": 1200,
+  "total_messages": 3400,
+  "banned_users": 3,
+  "new_users_7d": 15,
+  "new_reviews_7d": 42
+}
+```
+
+**`admin_log` — risposta paginata** (30 voci per pagina):
+```json
+{
+  "logs": [
+    {
+      "id": 1,
+      "admin_id": 1,
+      "admin_username": "pippobura",
+      "action": "ban_user",
+      "target_type": "user",
+      "target_id": 7,
+      "details": "Ban 7d. Motivo: Spam. Target: mario",
+      "created_at": "2026-05-06T16:45:00"
+    }
+  ],
+  "total": 50,
+  "page": 1,
+  "pages": 2
+}
+```
+
+### Audit Log
+
+Ogni azione admin (ban, unban, eliminazione, cambio ruolo) viene registrata automaticamente nella tabella `admin_log` tramite la funzione `auditLog()`. Il log è consultabile dalla sezione "Log" del pannello admin.
+
+---
+
 ## Client JavaScript (api.js)
 
 `api.js` espone classi e funzioni pronte all'uso per tutte le pagine frontend. Non richiede build step: basta includerlo prima degli script di pagina.
@@ -480,20 +560,3 @@ Palette "Honeycomb/Amber" definita in `shared.css`:
 | `--coral` | `#FF6B6B` | Errori, avvisi |
 | `--hive-900` | `#1a1510` | Background principale |
 | `--text` | `#F5F0E8` | Testo primario |
-
----
-
-## Note per la produzione
-
-Prima di portare il progetto in produzione:
-
-- **Disattivare il debug PHP** in `config.php`:
-  ```php
-  error_reporting(0);
-  ini_set('display_errors', 0);
-  ```
-- **Restringere CORS**: sostituire `Access-Control-Allow-Origin: *` con il dominio reale.
-- **Cambiare `JWT_SECRET`** con una stringa casuale lunga e sicura (almeno 32 caratteri).
-- **Cambiare `JWT_EXPIRY`** in base ai requisiti di sicurezza desiderati.
-- **Usare HTTPS** per proteggere i token in transito.
-- **Configurare un sistema di log** per gli errori di database e API, invece di stamparli al client.
