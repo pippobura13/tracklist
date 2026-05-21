@@ -15,27 +15,27 @@
         exit;
     }
     foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        $line = trim($line);
-        if ($line === '' || $line[0] === '#') continue;
-        [$key, $value] = array_map('trim', explode('=', $line, 2));
-        if (!getenv($key)) putenv("$key=$value");
-    }
+    $line = trim($line);
+    if ($line === '' || $line[0] === '#') continue;
+    [$key, $value] = array_map('trim', explode('=', $line, 2));
+    if (!getenv($key)) putenv("$key=$value");
+}
 })();
 
 // ============================================================
 // DATABASE CONFIGURATION
 // ============================================================
-define('DB_HOST',    getenv('DB_HOST')    ?: 'localhost');
-define('DB_NAME',    getenv('DB_NAME')    ?: 'hivemusic');
-define('DB_USER',    getenv('DB_USER')    ?: 'root');
-define('DB_PASS',    getenv('DB_PASS')    ?: '');
+define('DB_HOST', $env['DB_HOST'] ?? 'localhost');
+define('DB_NAME', $env['DB_NAME'] ?? 'hivemusic');
+define('DB_USER', $env['DB_USER'] ?? 'root');
+define('DB_PASS', $env['DB_PASS'] ?? '');
 define('DB_CHARSET', 'utf8mb4');
 
 // ============================================================
 // SPOTIFY API CREDENTIALS
 // ============================================================
-define('SPOTIFY_CLIENT_ID',     getenv('SPOTIFY_CLIENT_ID')     ?: '');
-define('SPOTIFY_CLIENT_SECRET', getenv('SPOTIFY_CLIENT_SECRET') ?: '');
+define('SPOTIFY_CLIENT_ID',     getenv('SPOTIFY_CLIENT_ID')     ?: 'd3859dddd2e44b88a30790a1c1f404dd');
+define('SPOTIFY_CLIENT_SECRET', getenv('SPOTIFY_CLIENT_SECRET') ?: 'd3455ddc48414cdebed233dab5684a32');
 define('SPOTIFY_TOKEN_URL',     'https://accounts.spotify.com/api/token');
 define('SPOTIFY_API_URL',       'https://api.spotify.com/v1');
 
